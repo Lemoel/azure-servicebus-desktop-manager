@@ -193,9 +193,9 @@ public class MainController implements Initializable {
             @Override
             public TableCell<QueueInfo, Void> call(TableColumn<QueueInfo, Void> param) {
                 return new TableCell<QueueInfo, Void>() {
-                    private final Button deleteButton = new Button("🗑️");
-                    private final Button clearButton = new Button("🧹");
-                    private final Button refreshButton = new Button("🔄");
+                    private final Button deleteButton = new Button("DEL");
+                    private final Button clearButton = new Button("CLEAR");
+                    private final Button refreshButton = new Button("REFRESH");
                     private final HBox actionBox = new HBox(5);
                     
                     {
@@ -269,7 +269,7 @@ public class MainController implements Initializable {
             @Override
             public TableCell<MessageInfo, Void> call(TableColumn<MessageInfo, Void> param) {
                 return new TableCell<MessageInfo, Void>() {
-                    private final Button deleteButton = new Button("🗑️");
+                    private final Button deleteButton = new Button("DEL");
                     private final HBox actionBox = new HBox(5);
                     
                     {
