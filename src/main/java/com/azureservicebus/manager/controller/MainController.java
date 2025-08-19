@@ -195,6 +195,7 @@ public class MainController implements Initializable {
                 return new TableCell<QueueInfo, Void>() {
                     private final Button deleteButton = new Button("🗑️");
                     private final Button clearButton = new Button("🧹");
+                    private final Button refreshButton = new Button("🔄");
                     private final HBox actionBox = new HBox(5);
                     
                     {
@@ -218,9 +219,19 @@ public class MainController implements Initializable {
                         );
                         clearButton.setTooltip(new Tooltip("Limpar mensagens da fila"));
                         
+                        // Configurar botão de refresh
+                        refreshButton.setStyle(
+                            "-fx-background-color: #17a2b8; " +
+                            "-fx-text-fill: white; " +
+                            "-fx-font-size: 12px; " +
+                            "-fx-padding: 3 6 3 6; " +
+                            "-fx-cursor: hand;"
+                        );
+                        refreshButton.setTooltip(new Tooltip("Atualizar dados da fila"));
+                        
                         // Configurar container
                         actionBox.setAlignment(Pos.CENTER);
-                        actionBox.getChildren().addAll(deleteButton, clearButton);
+                        actionBox.getChildren().addAll(refreshButton, deleteButton, clearButton);
                         
                         // Event handlers
                         deleteButton.setOnAction(event -> {
@@ -231,6 +242,11 @@ public class MainController implements Initializable {
                         clearButton.setOnAction(event -> {
                             QueueInfo queueInfo = getTableView().getItems().get(getIndex());
                             handleClearMessagesFromTable(queueInfo.getName());
+                        });
+                        
+                        refreshButton.setOnAction(event -> {
+                            QueueInfo queueInfo = getTableView().getItems().get(getIndex());
+                            handleRefreshQueueFromTable(queueInfo.getName());
                         });
                     }
                     
@@ -422,6 +438,50 @@ public class MainController implements Initializable {
             
             new Thread(deleteTask).start();
         }
+    }
+    
+    private void handleRefreshQueueFromTable(String queueName) {
+        if (!serviceBusService.isConnected()) {
+            showAlert("Erro", "Não conectado ao Service Bus", Alert.AlertType.ERROR);
+            return;
+        }
+        
+        Task<QueueInfo> refreshTask = new Task<QueueInfo>() {
+            @Override
+            protected QueueInfo call() throws Exception {
+                return serviceBusService.getQueueDetailsAsync(queueName).get();
+            }
+            
+            @Override
+            protected void succeeded() {
+                Platform.runLater(() -> {
+                    // Atualizar a fila específica na tabela
+                    QueueInfo updatedQueue = getValue();
+                    for (int i = 0; i < queueDetails.size(); i++) {
+                        if (queueDetails.get(i).getName().equals(queueName)) {
+                            queueDetails.set(i, updatedQueue);
+                            break;
+                        }
+                    }
+                    
+                    addLogMessage(String.format("Dados da fila '%s' atualizados com sucesso!", queueName));
+                    
+                    // Mostrar diálogo de sucesso
+                    showAlert("Sucesso", 
+                        String.format("Dados da fila '%s' foram atualizados com sucesso!", queueName), 
+                        Alert.AlertType.INFORMATION);
+                });
+            }
+            
+            @Override
+            protected void failed() {
+                Platform.runLater(() -> {
+                    showAlert("Erro", "Erro ao atualizar dados da fila: " + getException().getMessage(), Alert.AlertType.ERROR);
+                });
+            }
+        };
+        
+        new Thread(refreshTask).start();
     }
     
     private void setupEventHandlers() {
