@@ -1,0 +1,34 @@
+# Azure Service Bus Manager - Exemplo de Connection String
+# ========================================================
+
+# IMPORTANTE: Este é apenas um exemplo! 
+# Substitua pelos valores reais do seu Azure Service Bus.
+
+# Formato da Connection String:
+Endpoint=sb://SEU-NAMESPACE.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SUA-CHAVE-AQUI
+
+# Exemplo (NÃO FUNCIONAL):
+# Endpoint=sb://meu-namespace-dev.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=abcd1234efgh5678ijkl9012mnop3456qrst7890uvwx
+
+# Como obter sua Connection String:
+# 1. Acesse o Portal do Azure (https://portal.azure.com)
+# 2. Navegue até seu Service Bus Namespace
+# 3. Vá em "Shared access policies" (Políticas de acesso compartilhado)
+# 4. Clique em "RootManageSharedAccessKey" (ou crie uma nova política)
+# 5. Copie a "Primary Connection String"
+
+# Permissões necessárias:
+# - Listen: Para receber mensagens
+# - Send: Para enviar mensagens  
+# - Manage: Para criar/deletar filas
+
+# SEGURANÇA:
+# - NUNCA commite este arquivo com dados reais no Git!
+# - Use variáveis de ambiente em produção
+# - Considere usar Azure Key Vault para armazenar secrets
+# - Rotacione as chaves regularmente
+
+# Para usar:
+# 1. Copie sua connection string real
+# 2. Cole na interface da aplicação
+# 3. Clique em "Conectar"
