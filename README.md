@@ -237,17 +237,6 @@ OutOfMemoryError
 - Execute com mais memória: `java -Xmx2g -jar app.jar`
 - Evite carregar muitas mensagens simultaneamente
 
-## 📊 Comparação com Versão Python
-
-| Aspecto | Java/JavaFX | Python/Streamlit |
-|---------|-------------|------------------|
-| **Performance** | ⚡ Nativa, muito rápida | 🐌 Interpretada, mais lenta |
-| **Interface** | 🖥️ Desktop nativa | 🌐 Web browser |
-| **Dependências** | ✅ Apenas Java SDK | ❌ Azure CLI obrigatório |
-| **Portabilidade** | ✅ JAR executável | ❌ Precisa Python instalado |
-| **Recursos** | 💪 Uso eficiente | 🔋 Maior consumo |
-| **Offline** | ✅ Funciona offline | ❌ Precisa servidor web |
-
 ## 🤝 Contribuição
 
 1. **Fork** o projeto
@@ -273,11 +262,5 @@ Para suporte ou dúvidas:
 1. **Issues**: Abra uma issue no GitHub
 2. **Logs**: Verifique os logs em `logs/azure-servicebus-manager.log`
 3. **Debug**: Execute com `-Dlogback.configurationFile=logback-debug.xml`
-
-## 🏆 Créditos
-
-Desenvolvido como evolução da versão Python original, implementando uma interface desktop moderna e eficiente para gestão do Azure Service Bus.
-
----
 
 **⭐ Se este projeto foi útil, considere dar uma estrela no GitHub!**
