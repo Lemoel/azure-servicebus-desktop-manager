@@ -497,6 +497,73 @@ public class ServiceBusService {
     }
     
     /**
+     * Remove uma mensagem específica de uma fila pelo sequence number
+     */
+    public CompletableFuture<Boolean> deleteMessageAsync(String queueName, long sequenceNumber) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (!isConnected()) {
+                throw new IllegalStateException("Não conectado ao Service Bus");
+            }
+            
+            try {
+                // Criar cliente receiver para receber e deletar a mensagem específica
+                try (ServiceBusReceiverClient receiver = new ServiceBusClientBuilder()
+                         .connectionString(connectionString)
+                         .receiver()
+                         .queueName(queueName)
+                         .receiveMode(ServiceBusReceiveMode.PEEK_LOCK)
+                         .buildClient()) {
+                    
+                    // Receber mensagens em lotes e procurar pela mensagem específica
+                    int maxAttempts = 10; // Limitar tentativas para evitar loop infinito
+                    int attempts = 0;
+                    
+                    while (attempts < maxAttempts) {
+                        Iterable<ServiceBusReceivedMessage> receivedMessages = 
+                            receiver.receiveMessages(100, java.time.Duration.ofSeconds(5));
+                        
+                        boolean foundMessage = false;
+                        boolean hasMessages = false;
+                        
+                        for (ServiceBusReceivedMessage message : receivedMessages) {
+                            hasMessages = true;
+                            
+                            if (message.getSequenceNumber() == sequenceNumber) {
+                                // Encontrou a mensagem, deletar
+                                receiver.complete(message);
+                                logMessage(String.format("Mensagem com sequence number %d removida da fila '%s'", 
+                                    sequenceNumber, queueName));
+                                foundMessage = true;
+                            } else {
+                                // Não é a mensagem que queremos, abandonar para que volte à fila
+                                receiver.abandon(message);
+                            }
+                        }
+                        
+                        if (foundMessage) {
+                            return true;
+                        }
+                        
+                        if (!hasMessages) {
+                            break; // Não há mais mensagens na fila
+                        }
+                        
+                        attempts++;
+                    }
+                    
+                    logMessage(String.format("Mensagem com sequence number %d não encontrada na fila '%s'", 
+                        sequenceNumber, queueName));
+                    return false;
+                }
+                
+            } catch (Exception e) {
+                logError(String.format("Erro ao remover mensagem %d da fila '%s'", sequenceNumber, queueName), e);
+                throw new RuntimeException("Erro ao remover mensagem", e);
+            }
+        }, executorService);
+    }
+    
+    /**
      * Encerra o serviço e libera recursos
      */
     public void shutdown() {

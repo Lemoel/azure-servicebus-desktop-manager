@@ -135,6 +135,7 @@
                               <TableColumn fx:id="messageIdColumn" prefWidth="150.0" text="Message ID" />
                               <TableColumn fx:id="messageBodyColumn" prefWidth="200.0" text="Corpo (Preview)" />
                               <TableColumn fx:id="enqueuedTimeColumn" prefWidth="150.0" text="Data/Hora" />
+                              <TableColumn fx:id="messageActionsColumn" prefWidth="80.0" text="Ações" sortable="false" />
                            </columns>
                         </TableView>
                      </VBox>

@@ -74,6 +74,7 @@ public class MainController implements Initializable {
     @FXML private TableColumn<MessageInfo, String> messageIdColumn;
     @FXML private TableColumn<MessageInfo, String> messageBodyColumn;
     @FXML private TableColumn<MessageInfo, String> enqueuedTimeColumn;
+    @FXML private TableColumn<MessageInfo, Void> messageActionsColumn;
     @FXML private TextArea messageDetailsTextArea;
     
     // Aba de Envio de Mensagens
@@ -182,6 +183,9 @@ public class MainController implements Initializable {
                 time != null ? time.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")) : "N/A"
             )
         );
+        
+        // Configurar coluna de ações para mensagens
+        setupMessageActionsColumn();
     }
     
     private void setupActionsColumn() {
@@ -227,6 +231,50 @@ public class MainController implements Initializable {
                         clearButton.setOnAction(event -> {
                             QueueInfo queueInfo = getTableView().getItems().get(getIndex());
                             handleClearMessagesFromTable(queueInfo.getName());
+                        });
+                    }
+                    
+                    @Override
+                    protected void updateItem(Void item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (empty) {
+                            setGraphic(null);
+                        } else {
+                            setGraphic(actionBox);
+                        }
+                    }
+                };
+            }
+        });
+    }
+    
+    private void setupMessageActionsColumn() {
+        messageActionsColumn.setCellFactory(new Callback<TableColumn<MessageInfo, Void>, TableCell<MessageInfo, Void>>() {
+            @Override
+            public TableCell<MessageInfo, Void> call(TableColumn<MessageInfo, Void> param) {
+                return new TableCell<MessageInfo, Void>() {
+                    private final Button deleteButton = new Button("🗑️");
+                    private final HBox actionBox = new HBox(5);
+                    
+                    {
+                        // Configurar botão de deletar mensagem
+                        deleteButton.setStyle(
+                            "-fx-background-color: #dc3545; " +
+                            "-fx-text-fill: white; " +
+                            "-fx-font-size: 12px; " +
+                            "-fx-padding: 3 6 3 6; " +
+                            "-fx-cursor: hand;"
+                        );
+                        deleteButton.setTooltip(new Tooltip("Remover mensagem"));
+                        
+                        // Configurar container
+                        actionBox.setAlignment(Pos.CENTER);
+                        actionBox.getChildren().add(deleteButton);
+                        
+                        // Event handler
+                        deleteButton.setOnAction(event -> {
+                            MessageInfo messageInfo = getTableView().getItems().get(getIndex());
+                            handleDeleteMessageFromTable(messageInfo);
                         });
                     }
                     
@@ -316,6 +364,63 @@ public class MainController implements Initializable {
             };
             
             new Thread(clearTask).start();
+        }
+    }
+    
+    private void handleDeleteMessageFromTable(MessageInfo messageInfo) {
+        String queueName = viewQueueComboBox.getValue();
+        
+        if (queueName == null) {
+            showAlert("Erro", "Não foi possível determinar a fila da mensagem", Alert.AlertType.ERROR);
+            return;
+        }
+        
+        // Diálogo de confirmação para remoção da mensagem
+        Optional<ButtonType> result = showConfirmation(
+            "Confirmar Remoção da Mensagem",
+            String.format("Tem certeza que deseja remover a mensagem com sequence number %d?\n\nEsta operação é irreversível!", 
+                messageInfo.getSequenceNumber())
+        );
+        
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            Task<Boolean> deleteTask = new Task<Boolean>() {
+                @Override
+                protected Boolean call() throws Exception {
+                    return serviceBusService.deleteMessageAsync(queueName, messageInfo.getSequenceNumber()).get();
+                }
+                
+                @Override
+                protected void succeeded() {
+                    Platform.runLater(() -> {
+                        if (getValue()) {
+                            addLogMessage(String.format("Mensagem %d removida com sucesso da fila '%s'!", 
+                                messageInfo.getSequenceNumber(), queueName));
+                            
+                            // Recarregar mensagens para atualizar a lista
+                            handleLoadMessages();
+                            
+                            // Mostrar diálogo de sucesso
+                            showAlert("Sucesso", 
+                                String.format("Mensagem removida com sucesso da fila '%s'!", queueName), 
+                                Alert.AlertType.INFORMATION);
+                        } else {
+                            showAlert("Aviso", 
+                                String.format("Mensagem %d não foi encontrada na fila '%s'. Pode já ter sido processada.", 
+                                    messageInfo.getSequenceNumber(), queueName), 
+                                Alert.AlertType.WARNING);
+                        }
+                    });
+                }
+                
+                @Override
+                protected void failed() {
+                    Platform.runLater(() -> {
+                        showAlert("Erro", "Erro ao remover mensagem: " + getException().getMessage(), Alert.AlertType.ERROR);
+                    });
+                }
+            };
+            
+            new Thread(deleteTask).start();
         }
     }
     
@@ -779,11 +884,147 @@ public class MainController implements Initializable {
         details.append("Enqueued Time: ").append(selectedMessage.getFormattedEnqueuedTime()).append("\n");
         details.append("Size: ").append(selectedMessage.getFormattedSize()).append("\n");
         details.append("\n=== CORPO DA MENSAGEM ===\n");
-        details.append(selectedMessage.getMessageBody()).append("\n");
-        details.append("\n=== PROPRIEDADES ===\n");
+        
+        // Formatar o corpo da mensagem como JSON se possível
+        String messageBody = selectedMessage.getMessageBody();
+        if (messageBody != null && !messageBody.trim().isEmpty()) {
+            if (isValidJson(messageBody.trim())) {
+                // Se é JSON válido, formatar com indentação
+                details.append(formatJson(messageBody.trim()));
+            } else {
+                // Se não é JSON, mostrar como texto normal
+                details.append(messageBody);
+            }
+        } else {
+            details.append("(Mensagem vazia)");
+        }
+        
+        details.append("\n\n=== PROPRIEDADES ===\n");
         details.append(selectedMessage.getApplicationPropertiesAsString());
         
         messageDetailsTextArea.setText(details.toString());
+    }
+    
+    /**
+     * Formata uma string JSON com indentação básica
+     */
+    private String formatJson(String jsonString) {
+        if (jsonString == null || jsonString.trim().isEmpty()) {
+            return jsonString;
+        }
+        
+        try {
+            // Formatação básica de JSON com indentação
+            StringBuilder formatted = new StringBuilder();
+            int indentLevel = 0;
+            boolean inString = false;
+            boolean escapeNext = false;
+            
+            for (int i = 0; i < jsonString.length(); i++) {
+                char c = jsonString.charAt(i);
+                
+                if (escapeNext) {
+                    formatted.append(c);
+                    escapeNext = false;
+                    continue;
+                }
+                
+                if (c == '\\') {
+                    formatted.append(c);
+                    escapeNext = true;
+                    continue;
+                }
+                
+                if (c == '"' && !escapeNext) {
+                    inString = !inString;
+                    formatted.append(c);
+                    continue;
+                }
+                
+                if (inString) {
+                    formatted.append(c);
+                    continue;
+                }
+                
+                switch (c) {
+                    case '{':
+                    case '[':
+                        formatted.append(c);
+                        indentLevel++;
+                        formatted.append('\n');
+                        addIndentation(formatted, indentLevel);
+                        break;
+                    case '}':
+                    case ']':
+                        formatted.append('\n');
+                        indentLevel--;
+                        addIndentation(formatted, indentLevel);
+                        formatted.append(c);
+                        break;
+                    case ',':
+                        formatted.append(c);
+                        formatted.append('\n');
+                        addIndentation(formatted, indentLevel);
+                        break;
+                    case ':':
+                        formatted.append(c);
+                        formatted.append(' ');
+                        break;
+                    case ' ':
+                    case '\t':
+                    case '\n':
+                    case '\r':
+                        // Ignorar espaços em branco desnecessários
+                        break;
+                    default:
+                        formatted.append(c);
+                        break;
+                }
+            }
+            
+            return formatted.toString();
+        } catch (Exception e) {
+            // Se houver erro na formatação, retornar o JSON original
+            return jsonString;
+        }
+    }
+    
+    /**
+     * Adiciona indentação ao StringBuilder
+     */
+    private void addIndentation(StringBuilder sb, int level) {
+        for (int i = 0; i < level; i++) {
+            sb.append("  ");
+        }
+    }
+    
+    /**
+     * Escapa caracteres especiais para JSON
+     */
+    private String escapeJsonString(String input) {
+        if (input == null) {
+            return "";
+        }
+        return input.replace("\\", "\\\\")
+                   .replace("\"", "\\\"")
+                   .replace("\n", "\\n")
+                   .replace("\r", "\\r")
+                   .replace("\t", "\\t")
+                   .replace("\b", "\\b")
+                   .replace("\f", "\\f");
+    }
+    
+    /**
+     * Verifica se uma string é um JSON válido
+     */
+    private boolean isValidJson(String jsonString) {
+        if (jsonString == null || jsonString.trim().isEmpty()) {
+            return false;
+        }
+        
+        String trimmed = jsonString.trim();
+        return (trimmed.startsWith("{") && trimmed.endsWith("}")) || 
+               (trimmed.startsWith("[") && trimmed.endsWith("]"));
     }
     
     private void handleSendMessage() {
@@ -826,7 +1067,13 @@ public class MainController implements Initializable {
                     
                     if (getValue()) {
                         addLogMessage(String.format("Mensagem enviada para fila '%s'", selectedQueue));
-                        messageBodyTextArea.clear();
+                        
+                        // Mostrar diálogo de sucesso
+                        showAlert("Sucesso", 
+                            String.format("Mensagem enviada com sucesso para a fila '%s'!", selectedQueue), 
+                            Alert.AlertType.INFORMATION);
+                        
+                        // Limpar apenas os campos de propriedades, mantendo o corpo da mensagem
                         property1KeyField.clear();
                         property1ValueField.clear();
                         property2KeyField.clear();
