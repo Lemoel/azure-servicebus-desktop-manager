@@ -694,23 +694,25 @@ public class MainController implements Initializable {
             }
             
             // Limpar dados de forma segura
-            try {
-                queueNames.clear();
-            } catch (Exception e) {
-                logger.warn("Erro ao limpar queueNames: " + e.getMessage());
-            }
-            
-            try {
-                queueDetails.clear();
-            } catch (Exception e) {
-                logger.warn("Erro ao limpar queueDetails: " + e.getMessage());
-            }
-            
-            try {
-                messages.clear();
-            } catch (Exception e) {
-                logger.warn("Erro ao limpar messages: " + e.getMessage());
-            }
+            Platform.runLater(() -> {
+                try {
+                    queueNames.clear();
+                } catch (Exception e) {
+                    logger.warn("Erro ao limpar queueNames: " + e.getMessage());
+                }
+                
+                try {
+                    queueDetails.clear();
+                } catch (Exception e) {
+                    logger.warn("Erro ao limpar queueDetails: " + e.getMessage());
+                }
+                
+                try {
+                    messages.clear();
+                } catch (Exception e) {
+                    logger.warn("Erro ao limpar messages: " + e.getMessage());
+                }
+            });
         }
     }
     
