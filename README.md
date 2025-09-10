@@ -37,12 +37,29 @@ Uma aplicação desktop moderna em Java usando JavaFX para gerenciar filas do Az
 
 ## 🚀 Instalação e Execução
 
-### Opção 1: Executar com Maven (Desenvolvimento)
+### Opção 1: Executáveis Windows (Recomendado para usuários finais)
+
+#### **📥 Download Direto**
+- Baixe o executável `.exe` ou instalador `.msi` da seção [Releases](https://github.com/Lemoel/azure-servicebus-desktop-manager/releases)
+- Execute diretamente (não requer Java instalado)
+
+#### **🔨 Gerar Executáveis Localmente**
+```batch
+# Para executável direto (.exe)
+build-windows-exe.bat
+
+# Para instalador completo (.msi)
+build-windows-msi.bat
+```
+
+**📖 Guia Completo**: Veja [README-WINDOWS-BUILD.md](README-WINDOWS-BUILD.md) para instruções detalhadas.
+
+### Opção 2: Executar com Maven (Desenvolvimento)
 
 1. **Clone o repositório**:
 ```bash
-git clone https://github.com/seu-usuario/azure-servicebus-manager-javafx.git
-cd azure-servicebus-manager-javafx
+git clone https://github.com/Lemoel/azure-servicebus-desktop-manager.git
+cd azure-servicebus-desktop-manager
 ```
 
 2. **Compile e execute**:
@@ -51,7 +68,7 @@ mvn clean compile
 mvn javafx:run
 ```
 
-### Opção 2: Gerar JAR Executável
+### Opção 3: Gerar JAR Executável
 
 1. **Gerar o JAR**:
 ```bash
@@ -60,7 +77,7 @@ mvn clean package
 
 2. **Executar o JAR**:
 ```bash
-java -jar target/azure-servicebus-manager-1.0.0.jar
+java -jar target/azure-servicebus-manager-1.0.0-shaded.jar
 ```
 
 ## 📖 Como Usar

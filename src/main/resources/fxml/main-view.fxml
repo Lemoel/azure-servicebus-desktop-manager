@@ -164,7 +164,7 @@
                   
                   <!-- Message Body -->
                   <VBox spacing="5.0">
-                     <Label styleClass="subsection-title" text="📝 Corpo da Mensagem" />
+                     <Label fx:id="messageBodyLabel" styleClass="subsection-title" text="📝 Corpo da Mensagem" />
                      <TextArea fx:id="messageBodyTextArea" prefRowCount="8" wrapText="true" />
                   </VBox>
                   
@@ -215,6 +215,16 @@
             <Button fx:id="clearLogButton" styleClass="secondary-button" text="🗑️ Limpar Log" />
          </HBox>
          <TextArea fx:id="logTextArea" editable="false" prefRowCount="4" wrapText="true" />
+         <HBox alignment="CENTER_RIGHT">
+            <padding>
+               <Insets top="5.0" />
+            </padding>
+            <Label styleClass="developer-credit" text="Desenvolvido por Lemoel Marques">
+               <font>
+                  <Font size="10.0" />
+               </font>
+            </Label>
+         </HBox>
       </VBox>
    </bottom>
 </BorderPane>
