@@ -447,3 +447,33 @@
 .dark-theme .help-text {
     -fx-text-fill: #999999;
 }
+/* ===== CRÉDITO DO DESENVOLVEDOR ===== */
+.developer-credit {
+    -fx-text-fill: -secondary-color;
+    -fx-font-style: italic;
+    -fx-opacity: 0.7;
+}
+
+.developer-credit:hover {
+    -fx-opacity: 1.0;
+    -fx-text-fill: -primary-color;
+}
+
+.dark-theme .developer-credit {
+    -fx-text-fill: #999999;
+}
+
+.dark-theme .developer-credit:hover {
+    -fx-text-fill: #4fc3f7;
+}
+
+/* ===== LABELS CLICÁVEIS ===== */
+.subsection-title:hover {
+    -fx-text-fill: -primary-color;
+    -fx-cursor: hand;
+    -fx-underline: true;
+}
+
+.dark-theme .subsection-title:hover {
+    -fx-text-fill: #4fc3f7;
+}

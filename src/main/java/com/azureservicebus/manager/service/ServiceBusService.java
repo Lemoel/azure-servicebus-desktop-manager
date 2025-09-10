@@ -467,7 +467,11 @@ public class ServiceBusService {
                         
                         messageInfo.setSequenceNumber(message.getSequenceNumber());
                         messageInfo.setMessageId(message.getMessageId());
-                        messageInfo.setMessageBody(message.getBody().toString());
+                        
+                        // Tratar diferentes tipos de corpo de mensagem
+                        String messageBody = extractMessageBody(message);
+                        messageInfo.setMessageBody(messageBody);
+                        
                         messageInfo.setContentType(message.getContentType());
                         
                         if (message.getEnqueuedTime() != null) {
@@ -561,6 +565,46 @@ public class ServiceBusService {
                 throw new RuntimeException("Erro ao remover mensagem", e);
             }
         }, executorService);
+    }
+    
+    /**
+     * Extrai o corpo da mensagem tratando diferentes tipos de dados
+     */
+    private String extractMessageBody(ServiceBusReceivedMessage message) {
+        try {
+            // Tentar obter o corpo como string primeiro (funciona para STRING e BINARY)
+            return message.getBody().toString();
+            
+        } catch (UnsupportedOperationException e) {
+            // Se falhar, é provavelmente um tipo VALUE
+            try {
+                // Tentar obter como bytes e converter para string
+                byte[] bodyBytes = message.getBody().toBytes();
+                if (bodyBytes != null && bodyBytes.length > 0) {
+                    return new String(bodyBytes, java.nio.charset.StandardCharsets.UTF_8);
+                } else {
+                    return "[Mensagem vazia]";
+                }
+                
+            } catch (Exception ex) {
+                // Se ainda assim falhar, mostrar informação sobre o tipo
+                String bodyType = "DESCONHECIDO";
+                try {
+                    // Tentar determinar o tipo através de reflexão ou outras formas
+                    bodyType = "VALUE (tipo serializado)";
+                } catch (Exception ignored) {
+                    // Ignorar erros na determinação do tipo
+                }
+                
+                return String.format("[Tipo de corpo não suportado: %s - Tamanho: %d bytes]", 
+                    bodyType, 
+                    message.getBody() != null ? message.getBody().toBytes().length : 0);
+            }
+        } catch (Exception e) {
+            // Fallback para qualquer outro erro
+            logger.warn("Erro ao extrair corpo da mensagem: " + e.getMessage());
+            return String.format("[Erro ao ler mensagem: %s]", e.getMessage());
+        }
     }
     
     /**
