@@ -682,7 +682,8 @@ public class MainController implements Initializable {
             messagesTab.setDisable(true);
             sendMessageTab.setDisable(true);
             
-            // Limpar seleções primeiro para evitar IndexOutOfBoundsException
+            // Limpar dados de forma segura para evitar IndexOutOfBoundsException
+            // Primeiro limpar seleções
             try {
                 queueListView.getSelectionModel().clearSelection();
                 queueDetailsTable.getSelectionModel().clearSelection();
@@ -693,26 +694,14 @@ public class MainController implements Initializable {
                 logger.warn("Erro ao limpar seleções: " + e.getMessage());
             }
             
-            // Limpar dados de forma segura
-            Platform.runLater(() -> {
-                try {
-                    queueNames.clear();
-                } catch (Exception e) {
-                    logger.warn("Erro ao limpar queueNames: " + e.getMessage());
-                }
-                
-                try {
-                    queueDetails.clear();
-                } catch (Exception e) {
-                    logger.warn("Erro ao limpar queueDetails: " + e.getMessage());
-                }
-                
-                try {
-                    messages.clear();
-                } catch (Exception e) {
-                    logger.warn("Erro ao limpar messages: " + e.getMessage());
-                }
-            });
+            // Depois substituir as listas por listas vazias (mais seguro que clear())
+            try {
+                queueNames.setAll(FXCollections.observableArrayList());
+                queueDetails.setAll(FXCollections.observableArrayList());
+                messages.setAll(FXCollections.observableArrayList());
+            } catch (Exception e) {
+                logger.warn("Erro ao limpar listas: " + e.getMessage());
+            }
         }
     }
     
