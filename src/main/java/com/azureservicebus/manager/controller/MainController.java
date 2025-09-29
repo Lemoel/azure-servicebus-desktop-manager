@@ -1,5 +1,6 @@
 package com.azureservicebus.manager.controller;
 
+import com.azureservicebus.manager.model.CreateQueueResult;
 import com.azureservicebus.manager.model.QueueInfo;
 import com.azureservicebus.manager.model.MessageInfo;
 import com.azureservicebus.manager.service.ServiceBusService;
@@ -849,9 +850,9 @@ public class MainController implements Initializable {
         
         createQueueButton.setDisable(true);
         
-        Task<Boolean> createTask = new Task<Boolean>() {
+        Task<CreateQueueResult> createTask = new Task<CreateQueueResult>() {
             @Override
-            protected Boolean call() throws Exception {
+            protected CreateQueueResult call() throws Exception {
                 return serviceBusService.createQueueAsync(queueName).get();
             }
             
@@ -861,9 +862,29 @@ public class MainController implements Initializable {
                     createQueueButton.setDisable(false);
                     newQueueNameField.clear();
                     
-                    if (getValue()) {
-                        addLogMessage(String.format("Fila '%s' criada com sucesso!", queueName));
-                        handleLoadQueues(); // Recarregar lista
+                    CreateQueueResult result = getValue();
+                    switch (result) {
+                        case CREATED:
+                            addLogMessage(String.format("Fila '%s' criada com sucesso!", queueName));
+                            showAlert("Sucesso", 
+                                String.format("Fila '%s' foi criada com sucesso!", queueName), 
+                                Alert.AlertType.INFORMATION);
+                            handleLoadQueues(); // Recarregar lista
+                            break;
+                            
+                        case ALREADY_EXISTS:
+                            addLogMessage(String.format("Fila '%s' já existe no namespace", queueName));
+                            showAlert("Informação", 
+                                String.format("A fila '%s' já existe no namespace.\nVocê pode utilizá-la normalmente.", queueName), 
+                                Alert.AlertType.WARNING);
+                            handleLoadQueues(); // Recarregar lista para mostrar a fila
+                            break;
+                            
+                        case ERROR:
+                            showAlert("Erro", 
+                                String.format("Erro ao criar fila '%s'. Verifique os logs para mais detalhes.", queueName), 
+                                Alert.AlertType.ERROR);
+                            break;
                     }
                 });
             }
