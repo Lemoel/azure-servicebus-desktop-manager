@@ -40,7 +40,7 @@ com.azureservicebus.manager/
 ## 🔧 Tecnologias e Dependências
 
 ### **Core Technologies**
-- **Java 17**: Linguagem base
+- **Java 21**: Linguagem base (LTS)
 - **JavaFX 21**: Framework de interface gráfica
 - **Maven**: Build e gestão de dependências
 
@@ -187,6 +187,8 @@ mvn javafx:run            # Executar em desenvolvimento
 mvn clean package         # Criar JAR executável
 ```
 
+**Nota**: Requer Java 21+ para compilação e execução.
+
 ### **JAR Executável**
 - **Localização**: `target/azure-servicebus-manager-1.0.0-shaded.jar`
 - **Execução**: `java -jar target/azure-servicebus-manager-1.0.0-shaded.jar`
@@ -199,7 +201,7 @@ mvn clean package         # Criar JAR executável
 - **Rotação**: 10MB por arquivo, 30 dias de histórico
 
 ### **Maven (pom.xml)**
-- **Java Version**: 17
+- **Java Version**: 21
 - **JavaFX Version**: 21.0.1
 - **Azure SDK Version**: 7.15.0
 - **Plugins**: JavaFX Maven Plugin, Shade Plugin

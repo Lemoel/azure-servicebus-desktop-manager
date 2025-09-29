@@ -8,7 +8,7 @@ REM Verificar se Java está instalado
 java -version >nul 2>&1
 if %errorlevel% neq 0 (
     echo ERRO: Java não encontrado!
-    echo Por favor, instale Java 17 ou superior.
+    echo Por favor, instale Java 21 ou superior.
     echo Download: https://adoptium.net/
     pause
     exit /b 1
@@ -84,14 +84,14 @@ goto menu
 
 :run_jar
 echo.
-if not exist "target\azure-servicebus-manager-1.0.0-shaded.jar" (
+if not exist "target\azure-servicebus-manager-1.0.0.jar" (
     echo JAR não encontrado!
     echo Execute a opção 3 primeiro para criar o JAR.
     pause
     goto menu
 )
 echo Executando JAR...
-java -jar target\azure-servicebus-manager-1.0.0-shaded.jar
+java -jar target\azure-servicebus-manager-1.0.0.jar
 pause
 goto menu
 
