@@ -8,7 +8,7 @@ echo
 # Verificar se Java está instalado
 if ! command -v java &> /dev/null; then
     echo "ERRO: Java não encontrado!"
-    echo "Por favor, instale Java 17 ou superior."
+    echo "Por favor, instale Java 21 ou superior."
     echo "Download: https://adoptium.net/"
     exit 1
 fi
@@ -77,12 +77,12 @@ package_jar() {
 # Função para executar JAR
 run_jar() {
     echo
-    if [ ! -f "target/azure-servicebus-manager-1.0.0-shaded.jar" ]; then
+    if [ ! -f "target/azure-servicebus-manager-1.0.0.jar" ]; then
         echo "JAR não encontrado!"
         echo "Execute a opção 3 primeiro para criar o JAR."
     else
         echo "Executando JAR..."
-        java -jar target/azure-servicebus-manager-1.0.0-shaded.jar
+        java --module-path /usr/local/lib/javafx-21.0.1/lib --add-modules javafx.controls,javafx.fxml -jar target/azure-servicebus-manager-1.0.0.jar 2>/dev/null || java -jar target/azure-servicebus-manager-1.0.0.jar
     fi
     echo
     read -p "Pressione Enter para continuar..."

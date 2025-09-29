@@ -32,7 +32,7 @@ Uma aplicação desktop moderna desenvolvida em Java com JavaFX para gerenciar f
 ## 🛠️ Tecnologias Utilizadas
 
 ### **Framework e UI**
-- **Java 17**: Linguagem de programação moderna
+- **Java 21**: Linguagem de programação moderna (LTS)
 - **JavaFX 21**: Framework para interface gráfica moderna
 - **FXML**: Definição declarativa da interface
 - **CSS**: Estilização avançada da interface
@@ -52,7 +52,7 @@ Uma aplicação desktop moderna desenvolvida em Java com JavaFX para gerenciar f
 
 ## 📋 Pré-requisitos
 
-1. **Java 17 ou superior**
+1. **Java 21 ou superior**
 2. **Maven 3.6+**
 3. **Connection String** do Azure Service Bus
 4. **Permissões adequadas** no Azure Service Bus
@@ -180,7 +180,7 @@ Erro na conexão: Unauthorized
 ```
 JavaFX runtime components are missing
 ```
-**Solução**: Certifique-se de usar Java 17+ ou adicione o JavaFX ao classpath.
+**Solução**: Certifique-se de usar Java 21+ ou adicione o JavaFX ao classpath.
 
 ### **Erro de Dependências**
 ```
