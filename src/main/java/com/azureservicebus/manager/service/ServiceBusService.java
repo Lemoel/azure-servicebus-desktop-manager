@@ -6,6 +6,7 @@ import com.azure.messaging.servicebus.administration.ServiceBusAdministrationCli
 import com.azure.messaging.servicebus.administration.models.*;
 import com.azure.messaging.servicebus.models.ServiceBusReceiveMode;
 import com.azure.messaging.servicebus.models.SubQueue;
+import com.azureservicebus.manager.model.CreateQueueResult;
 import com.azureservicebus.manager.model.MessageInfo;
 import com.azureservicebus.manager.model.QueueInfo;
 import javafx.collections.FXCollections;
@@ -283,7 +284,7 @@ public class ServiceBusService {
     /**
      * Cria uma nova fila
      */
-    public CompletableFuture<Boolean> createQueueAsync(String queueName) {
+    public CompletableFuture<CreateQueueResult> createQueueAsync(String queueName) {
         return CompletableFuture.supplyAsync(() -> {
             if (!isConnected()) {
                 throw new IllegalStateException("Não conectado ao Service Bus");
@@ -294,11 +295,16 @@ public class ServiceBusService {
                 adminClient.createQueue(queueName, options);
                 
                 logMessage(String.format("Fila '%s' criada com sucesso", queueName));
-                return true;
+                return CreateQueueResult.CREATED;
+                
+            } catch (com.azure.core.exception.ResourceExistsException e) {
+                // Fila já existe - não é um erro, apenas informativo
+                logMessage(String.format("Fila '%s' já existe no namespace", queueName));
+                return CreateQueueResult.ALREADY_EXISTS;
                 
             } catch (Exception e) {
                 logError(String.format("Erro ao criar fila '%s'", queueName), e);
-                throw new RuntimeException("Erro ao criar fila", e);
+                return CreateQueueResult.ERROR;
             }
         }, executorService);
     }

@@ -82,8 +82,43 @@ mvn clean package
 
 ### **5. Executar JAR**
 ```bash
-java -jar target/azure-servicebus-manager-1.0.0-shaded.jar
+java -jar target/azure-servicebus-manager-1.0.0.jar
 ```
+
+## 🍎 **Distribuição para macOS**
+
+### **Criar Instalador DMG (Mac)**
+```bash
+mvn clean package -P mac-dmg
+```
+
+**Resultado**: `target/dist/AzureServiceBusManager-1.0.0.dmg` (~92 MB)
+
+### **Instalar no Mac**
+1. Abra o arquivo `.dmg`
+2. Arraste `Azure Service Bus Manager.app` para a pasta `Applications`
+3. Execute a partir do Launchpad ou Applications
+4. A aplicação aparece com ícone nativo na lista de aplicações
+
+### **Funcionalidades do DMG**
+- ✅ **Instalador Nativo**: Formato padrão do macOS
+- ✅ **JRE Incluído**: Não precisa de Java instalado
+- ✅ **Ícone Nativo**: Aparece corretamente no Dock e Applications
+- ✅ **Autocontido**: Todas as dependências incluídas
+
+## 🪟 **Distribuição para Windows**
+
+### **Criar Instalador EXE (Windows)**
+```bash
+mvn clean package -P windows-exe
+```
+
+### **Criar Instalador MSI (Windows)**
+```bash
+mvn clean package -P windows-msi
+```
+
+**Resultados**: `target/dist/AzureServiceBusManager-1.0.0.exe` ou `.msi`
 
 ## 🎯 Como Usar
 

@@ -185,9 +185,31 @@ User Input (Queue + Message + Properties) → Validation → ServiceBusService.s
 mvn clean compile          # Compilar
 mvn javafx:run            # Executar em desenvolvimento
 mvn clean package         # Criar JAR executável
+mvn clean package -P mac-dmg        # Criar DMG para Mac
+mvn clean package -P windows-exe    # Criar EXE para Windows  
+mvn clean package -P windows-msi    # Criar MSI para Windows
 ```
 
 **Nota**: Requer Java 21+ para compilação e execução.
+
+### **Distribuição Multiplataforma**
+
+**JAR Universal**:
+- **Localização**: `target/azure-servicebus-manager-1.0.0.jar`
+- **Tamanho**: ~35 MB (com todas as dependências)
+- **Requisito**: Java 21+ instalado no sistema
+
+**Mac DMG**:
+- **Profile**: `mac-dmg`
+- **Localização**: `target/dist/AzureServiceBusManager-1.0.0.dmg`
+- **Tamanho**: ~92 MB (JRE incluído)
+- **Formato**: Instalador nativo macOS
+- **Recursos**: Ícone nativo, JRE embutido, instalação via drag-and-drop
+
+**Windows**:
+- **Profiles**: `windows-exe`, `windows-msi`
+- **Localização**: `target/dist/AzureServiceBusManager-1.0.0.exe|.msi`
+- **Recursos**: Instalador nativo Windows, shortcuts, menu inicial
 
 ### **JAR Executável**
 - **Localização**: `target/azure-servicebus-manager-1.0.0-shaded.jar`

@@ -200,8 +200,9 @@
         </plugins>
     </build>
 
-    <!-- Profile para geração de executáveis Windows -->
+    <!-- Profiles para geração de executáveis multiplataforma -->
     <profiles>
+        <!-- Profile para geração de executáveis Windows -->
         <profile>
             <id>windows-exe</id>
             <activation>
@@ -260,6 +261,41 @@
                                     <winMenu>true</winMenu>
                                     <winShortcut>true</winShortcut>
                                     <winPerUserInstall>false</winPerUserInstall>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Profile para geração de instalador Mac DMG -->
+        <profile>
+            <id>mac-dmg</id>
+            <activation>
+                <os>
+                    <family>mac</family>
+                </os>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.panteleyev</groupId>
+                        <artifactId>jpackage-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>mac-dmg</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jpackage</goal>
+                                </goals>
+                                <configuration>
+                                    <type>DMG</type>
+                                    <input>target</input>
+                                    <macPackageName>Azure Service Bus Manager</macPackageName>
+                                    <macPackageIdentifier>com.azureservicebus.manager</macPackageIdentifier>
+                                    <macPackageSigningPrefix>com.azureservicebus</macPackageSigningPrefix>
+                                    <macSign>false</macSign>
                                 </configuration>
                             </execution>
                         </executions>
