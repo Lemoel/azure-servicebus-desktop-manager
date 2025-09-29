@@ -79,9 +79,6 @@ public class AzureServiceBusManagerApp extends Application {
     }
     
     public static void main(String[] args) {
-        // Configurar propriedades do sistema para JavaFX
-        System.setProperty("javafx.preloader", "com.azureservicebus.manager.preloader.AppPreloader");
-        
         logger.info("Iniciando Azure Service Bus Manager...");
         launch(args);
     }
