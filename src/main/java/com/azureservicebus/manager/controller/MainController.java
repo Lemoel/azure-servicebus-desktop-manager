@@ -519,134 +519,55 @@ public class MainController implements Initializable {
     }
     
     private void setupViewQueueComboBoxFilter() {
-        // Tornar a ComboBox editável e configurar filtro
-        viewQueueComboBox.getEditor().textProperty().addListener((obs, oldVal, newVal) -> {
-            if (updatingViewQueueComboBox) {
-                return; // Prevenir loops infinitos
-            }
-            
-            updatingViewQueueComboBox = true;
-            try {
-                if (newVal == null || newVal.isEmpty()) {
-                    viewQueueComboBox.setItems(queueNames);
-                } else {
-                    ObservableList<String> filteredQueues = queueNames.filtered(
-                        queueName -> queueName.toLowerCase().contains(newVal.toLowerCase())
-                    );
-                    viewQueueComboBox.setItems(filteredQueues);
-                    
-                    // Manter o dropdown aberto durante a digitação
-                    if (!viewQueueComboBox.isShowing()) {
-                        viewQueueComboBox.show();
-                    }
-                }
-            } finally {
-                updatingViewQueueComboBox = false;
-            }
-        });
-        
-        // Quando o usuário seleciona um item da lista
-        viewQueueComboBox.setOnAction(e -> {
-            String selectedQueue = viewQueueComboBox.getValue();
-            if (selectedQueue != null && !selectedQueue.isEmpty()) {
-                viewQueueComboBox.getEditor().setText(selectedQueue);
-            }
-        });
-        
-        // Quando o campo perde o foco, validar se o texto digitado corresponde a uma fila válida
         viewQueueComboBox.getEditor().focusedProperty().addListener((obs, oldVal, newVal) -> {
-            if (!newVal && !updatingViewQueueComboBox) { // Perdeu o foco e não está em atualização
-                updatingViewQueueComboBox = true;
-                try {
-                    String typedText = viewQueueComboBox.getEditor().getText();
-                    String currentValue = viewQueueComboBox.getValue();
-                    
-                    // Restaurar a lista completa quando perder o foco
-                    viewQueueComboBox.setItems(queueNames);
-                    
-                    if (typedText != null && !typedText.isEmpty()) {
-                        // Verificar se o texto digitado corresponde exatamente a uma fila
-                        boolean found = queueNames.stream().anyMatch(queue -> queue.equals(typedText));
-                        if (found) {
-                            viewQueueComboBox.setValue(typedText);
+            if (!newVal) {
+                String typedText = viewQueueComboBox.getEditor().getText();
+                
+                if (typedText != null && !typedText.trim().isEmpty()) {
+                    String trimmed = typedText.trim();
+                    boolean found = queueNames.stream().anyMatch(queue -> queue.equals(trimmed));
+                    if (found) {
+                        viewQueueComboBox.setValue(trimmed);
+                    } else {
+                        Optional<String> partialMatch = queueNames.stream()
+                            .filter(queue -> queue.toLowerCase().contains(trimmed.toLowerCase()))
+                            .findFirst();
+                        
+                        if (partialMatch.isPresent()) {
+                            viewQueueComboBox.setValue(partialMatch.get());
+                            viewQueueComboBox.getEditor().setText(partialMatch.get());
                         } else {
-                            // Se não encontrou correspondência exata, limpar a seleção
-                            viewQueueComboBox.setValue(null);
-                            viewQueueComboBox.getEditor().clear();
+                            viewQueueComboBox.setValue(trimmed);
                         }
-                    } else if (currentValue != null) {
-                        // Se o campo está vazio mas há um valor selecionado, manter o valor
-                        viewQueueComboBox.setValue(currentValue);
                     }
-                } finally {
-                    updatingViewQueueComboBox = false;
                 }
             }
         });
     }
     
     private void setupSendQueueComboBoxFilter() {
-        // Tornar a ComboBox editável e configurar filtro
-        sendQueueComboBox.getEditor().textProperty().addListener((obs, oldVal, newVal) -> {
-            if (updatingSendQueueComboBox) {
-                return; // Prevenir loops infinitos
-            }
-            
-            updatingSendQueueComboBox = true;
-            try {
-                if (newVal == null || newVal.isEmpty()) {
-                    sendQueueComboBox.setItems(queueNames);
-                } else {
-                    ObservableList<String> filteredQueues = queueNames.filtered(
-                        queueName -> queueName.toLowerCase().contains(newVal.toLowerCase())
-                    );
-                    sendQueueComboBox.setItems(filteredQueues);
-                    
-                    // Manter o dropdown aberto durante a digitação
-                    if (!sendQueueComboBox.isShowing()) {
-                        sendQueueComboBox.show();
-                    }
-                }
-            } finally {
-                updatingSendQueueComboBox = false;
-            }
-        });
-        
-        // Quando o usuário seleciona um item da lista
-        sendQueueComboBox.setOnAction(e -> {
-            String selectedQueue = sendQueueComboBox.getValue();
-            if (selectedQueue != null && !selectedQueue.isEmpty()) {
-                sendQueueComboBox.getEditor().setText(selectedQueue);
-            }
-        });
-        
-        // Quando o campo perde o foco, validar se o texto digitado corresponde a uma fila válida
         sendQueueComboBox.getEditor().focusedProperty().addListener((obs, oldVal, newVal) -> {
-            if (!newVal && !updatingSendQueueComboBox) { // Perdeu o foco e não está em atualização
-                updatingSendQueueComboBox = true;
-                try {
-                    String typedText = sendQueueComboBox.getEditor().getText();
-                    String currentValue = sendQueueComboBox.getValue();
-                    
-                    // Restaurar a lista completa quando perder o foco
-                    sendQueueComboBox.setItems(queueNames);
-                    
-                    if (typedText != null && !typedText.isEmpty()) {
-                        // Verificar se o texto digitado corresponde exatamente a uma fila
-                        boolean found = queueNames.stream().anyMatch(queue -> queue.equals(typedText));
-                        if (found) {
-                            sendQueueComboBox.setValue(typedText);
+            if (!newVal) {
+                String typedText = sendQueueComboBox.getEditor().getText();
+                
+                if (typedText != null && !typedText.trim().isEmpty()) {
+                    String trimmed = typedText.trim();
+                    boolean found = queueNames.stream().anyMatch(queue -> queue.equals(trimmed));
+                    if (found) {
+                        sendQueueComboBox.setValue(trimmed);
+                    } else {
+                        Optional<String> partialMatch = queueNames.stream()
+                            .filter(queue -> queue.toLowerCase().contains(trimmed.toLowerCase()))
+                            .findFirst();
+                        
+                        if (partialMatch.isPresent()) {
+                            sendQueueComboBox.setValue(partialMatch.get());
+                            sendQueueComboBox.getEditor().setText(partialMatch.get());
                         } else {
-                            // Se não encontrou correspondência exata, limpar a seleção
                             sendQueueComboBox.setValue(null);
                             sendQueueComboBox.getEditor().clear();
                         }
-                    } else if (currentValue != null) {
-                        // Se o campo está vazio mas há um valor selecionado, manter o valor
-                        sendQueueComboBox.setValue(currentValue);
                     }
-                } finally {
-                    updatingSendQueueComboBox = false;
                 }
             }
         });
@@ -905,10 +826,21 @@ public class MainController implements Initializable {
     private void handleLoadMessages() {
         String selectedQueue = viewQueueComboBox.getValue();
         
-        if (selectedQueue == null) {
-            showAlert("Erro", "Selecione uma fila", Alert.AlertType.ERROR);
-            return;
+        if (selectedQueue == null || selectedQueue.isEmpty()) {
+            String editorText = viewQueueComboBox.getEditor().getText();
+            if (editorText != null && !editorText.trim().isEmpty()) {
+                selectedQueue = editorText.trim();
+                if (!queueNames.contains(selectedQueue)) {
+                    showAlert("Erro", String.format("A fila '%s' não existe ou não foi carregada.", selectedQueue), Alert.AlertType.ERROR);
+                    return;
+                }
+            } else {
+                showAlert("Erro", "Selecione uma fila", Alert.AlertType.ERROR);
+                return;
+            }
         }
+        
+        final String queueName = selectedQueue;
         
         loadMessagesButton.setDisable(true);
         loadMessagesButton.setText("Carregando...");
@@ -916,7 +848,7 @@ public class MainController implements Initializable {
         Task<ObservableList<MessageInfo>> loadTask = new Task<ObservableList<MessageInfo>>() {
             @Override
             protected ObservableList<MessageInfo> call() throws Exception {
-                return serviceBusService.peekMessagesAsync(selectedQueue, 20).get();
+                return serviceBusService.peekMessagesAsync(queueName, 20).get();
             }
             
             @Override
@@ -925,7 +857,7 @@ public class MainController implements Initializable {
                     messages.setAll(getValue());
                     loadMessagesButton.setDisable(false);
                     loadMessagesButton.setText("Carregar Mensagens");
-                    addLogMessage(String.format("Carregadas %d mensagens da fila '%s'", getValue().size(), selectedQueue));
+                    addLogMessage(String.format("Carregadas %d mensagens da fila '%s'", getValue().size(), queueName));
                 });
             }
             

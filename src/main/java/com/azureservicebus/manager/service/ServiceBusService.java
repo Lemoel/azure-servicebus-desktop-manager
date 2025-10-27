@@ -578,37 +578,60 @@ public class ServiceBusService {
      */
     private String extractMessageBody(ServiceBusReceivedMessage message) {
         try {
-            // Tentar obter o corpo como string primeiro (funciona para STRING e BINARY)
-            return message.getBody().toString();
-            
-        } catch (UnsupportedOperationException e) {
-            // Se falhar, é provavelmente um tipo VALUE
-            try {
-                // Tentar obter como bytes e converter para string
-                byte[] bodyBytes = message.getBody().toBytes();
-                if (bodyBytes != null && bodyBytes.length > 0) {
-                    return new String(bodyBytes, java.nio.charset.StandardCharsets.UTF_8);
-                } else {
-                    return "[Mensagem vazia]";
-                }
+            // Primeiro, tentar acessar através do raw AMQP message para mensagens tipo VALUE
+            if (message.getRawAmqpMessage() != null && message.getRawAmqpMessage().getBody() != null) {
+                Object body = message.getRawAmqpMessage().getBody();
                 
-            } catch (Exception ex) {
-                // Se ainda assim falhar, mostrar informação sobre o tipo
-                String bodyType = "DESCONHECIDO";
-                try {
-                    // Tentar determinar o tipo através de reflexão ou outras formas
-                    bodyType = "VALUE (tipo serializado)";
-                } catch (Exception ignored) {
-                    // Ignorar erros na determinação do tipo
+                // Verificar se é um AmqpMessageBody do tipo VALUE
+                if (body instanceof com.azure.core.amqp.models.AmqpMessageBody) {
+                    com.azure.core.amqp.models.AmqpMessageBody amqpBody = (com.azure.core.amqp.models.AmqpMessageBody) body;
+                    
+                    // Tentar extrair o valor serializado
+                    try {
+                        Object value = amqpBody.getValue();
+                        if (value != null) {
+                            // Se o valor for bytes, converter para string
+                            if (value instanceof byte[]) {
+                                byte[] bytes = (byte[]) value;
+                                if (bytes.length > 0) {
+                                    return new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
+                                } else {
+                                    return "[Mensagem vazia]";
+                                }
+                            }
+                            // Caso contrário, usar toString()
+                            return value.toString();
+                        }
+                    } catch (UnsupportedOperationException ex) {
+                        // Se getValue() não funcionar, tentar outras formas
+                        logger.debug("getValue() não suportado, tentando alternativas");
+                    }
                 }
-                
-                return String.format("[Tipo de corpo não suportado: %s - Tamanho: %d bytes]", 
-                    bodyType, 
-                    message.getBody() != null ? message.getBody().toBytes().length : 0);
             }
+            
+            // Fallback: tentar o método padrão getBody() para STRING e BINARY
+            try {
+                return message.getBody().toString();
+            } catch (UnsupportedOperationException e) {
+                // Se ainda falhar, tentar extrair como bytes
+                try {
+                    byte[] bodyBytes = message.getBody().toBytes();
+                    if (bodyBytes != null && bodyBytes.length > 0) {
+                        return new String(bodyBytes, java.nio.charset.StandardCharsets.UTF_8);
+                    } else {
+                        return "[Mensagem vazia]";
+                    }
+                } catch (Exception ex) {
+                    logger.warn("Não foi possível extrair corpo da mensagem usando métodos padrão");
+                }
+            }
+            
+            // Último recurso: mostrar informação sobre o tipo
+            return "[Tipo de corpo não suportado - use ferramentas específicas para visualizar]";
+            
         } catch (Exception e) {
             // Fallback para qualquer outro erro
-            logger.warn("Erro ao extrair corpo da mensagem: " + e.getMessage());
+            logger.warn("Erro ao extrair corpo da mensagem: " + e.getMessage(), e);
             return String.format("[Erro ao ler mensagem: %s]", e.getMessage());
         }
     }
