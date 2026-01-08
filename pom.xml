@@ -18,9 +18,9 @@
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <javafx.version>21.0.1</javafx.version>
-        <azure.servicebus.version>7.15.0</azure.servicebus.version>
-        <azure.identity.version>1.11.1</azure.identity.version>
-        <jackson.version>2.16.0</jackson.version>
+        <azure.servicebus.version>7.17.16</azure.servicebus.version>
+        <azure.identity.version>1.18.1</azure.identity.version>
+        <jackson.version>2.18.2</jackson.version>
         <slf4j.version>2.0.9</slf4j.version>
         <logback.version>1.4.14</logback.version>
     </properties>

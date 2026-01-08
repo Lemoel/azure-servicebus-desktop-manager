@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -578,15 +577,30 @@ public class ServiceBusService {
      */
     private String extractMessageBody(ServiceBusReceivedMessage message) {
         try {
-            // Primeiro, tentar acessar através do raw AMQP message para mensagens tipo VALUE
+            // Primeiro, tentar acessar através do raw AMQP message
             if (message.getRawAmqpMessage() != null && message.getRawAmqpMessage().getBody() != null) {
                 Object body = message.getRawAmqpMessage().getBody();
                 
-                // Verificar se é um AmqpMessageBody do tipo VALUE
+                // Verificar se é um AmqpMessageBody
                 if (body instanceof com.azure.core.amqp.models.AmqpMessageBody) {
                     com.azure.core.amqp.models.AmqpMessageBody amqpBody = (com.azure.core.amqp.models.AmqpMessageBody) body;
                     
-                    // Tentar extrair o valor serializado
+                    // Tentar extrair como DATA (o tipo mais comum para mensagens JSON/String)
+                    try {
+                        byte[] dataBytes = amqpBody.getFirstData();
+                        if (dataBytes != null && dataBytes.length > 0) {
+                            String result = new String(dataBytes, java.nio.charset.StandardCharsets.UTF_8);
+                            logger.debug("Mensagem extraída com sucesso como tipo DATA");
+                            return result;
+                        }
+                    } catch (UnsupportedOperationException e) {
+                        // Não é tipo DATA, tentar outros tipos
+                        logger.debug("Corpo não é tipo DATA, tentando VALUE: " + e.getMessage());
+                    } catch (Exception e) {
+                        logger.debug("Erro ao extrair como DATA: " + e.getMessage());
+                    }
+                    
+                    // Tentar extrair como VALUE
                     try {
                         Object value = amqpBody.getValue();
                         if (value != null) {
@@ -594,36 +608,67 @@ public class ServiceBusService {
                             if (value instanceof byte[]) {
                                 byte[] bytes = (byte[]) value;
                                 if (bytes.length > 0) {
-                                    return new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
+                                    String result = new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
+                                    logger.debug("Mensagem extraída com sucesso como tipo VALUE (bytes)");
+                                    return result;
                                 } else {
                                     return "[Mensagem vazia]";
                                 }
                             }
                             // Caso contrário, usar toString()
+                            logger.debug("Mensagem extraída com sucesso como tipo VALUE (object)");
                             return value.toString();
                         }
                     } catch (UnsupportedOperationException ex) {
-                        // Se getValue() não funcionar, tentar outras formas
-                        logger.debug("getValue() não suportado, tentando alternativas");
+                        // Não é tipo VALUE, tentar SEQUENCE
+                        logger.debug("Corpo não é tipo VALUE, tentando SEQUENCE: " + ex.getMessage());
+                    } catch (Exception ex) {
+                        logger.debug("Erro ao extrair como VALUE: " + ex.getMessage());
+                    }
+                    
+                    // Tentar extrair como SEQUENCE
+                    try {
+                        java.util.List<Object> sequence = amqpBody.getSequence();
+                        if (sequence != null && !sequence.isEmpty()) {
+                            // Converter a sequência para uma string legível
+                            StringBuilder sb = new StringBuilder();
+                            for (int i = 0; i < sequence.size(); i++) {
+                                if (i > 0) sb.append(", ");
+                                sb.append(sequence.get(i));
+                            }
+                            logger.debug("Mensagem extraída com sucesso como tipo SEQUENCE");
+                            return sb.toString();
+                        }
+                    } catch (UnsupportedOperationException ex) {
+                        logger.debug("Corpo não é tipo SEQUENCE: " + ex.getMessage());
+                    } catch (Exception e) {
+                        logger.debug("Erro ao extrair como SEQUENCE: " + e.getMessage());
                     }
                 }
             }
             
             // Fallback: tentar o método padrão getBody() para STRING e BINARY
             try {
-                return message.getBody().toString();
+                String result = message.getBody().toString();
+                logger.debug("Mensagem extraída com método padrão getBody().toString()");
+                return result;
             } catch (UnsupportedOperationException e) {
+                logger.debug("getBody().toString() não suportado, tentando toBytes()");
                 // Se ainda falhar, tentar extrair como bytes
                 try {
                     byte[] bodyBytes = message.getBody().toBytes();
                     if (bodyBytes != null && bodyBytes.length > 0) {
-                        return new String(bodyBytes, java.nio.charset.StandardCharsets.UTF_8);
+                        String result = new String(bodyBytes, java.nio.charset.StandardCharsets.UTF_8);
+                        logger.debug("Mensagem extraída com getBody().toBytes()");
+                        return result;
                     } else {
                         return "[Mensagem vazia]";
                     }
                 } catch (Exception ex) {
-                    logger.warn("Não foi possível extrair corpo da mensagem usando métodos padrão");
+                    logger.warn("Não foi possível extrair corpo da mensagem usando métodos padrão: " + ex.getMessage());
                 }
+            } catch (Exception e) {
+                logger.debug("Erro com getBody(): " + e.getMessage());
             }
             
             // Último recurso: mostrar informação sobre o tipo
@@ -631,7 +676,7 @@ public class ServiceBusService {
             
         } catch (Exception e) {
             // Fallback para qualquer outro erro
-            logger.warn("Erro ao extrair corpo da mensagem: " + e.getMessage(), e);
+            logger.error("Erro ao extrair corpo da mensagem", e);
             return String.format("[Erro ao ler mensagem: %s]", e.getMessage());
         }
     }
