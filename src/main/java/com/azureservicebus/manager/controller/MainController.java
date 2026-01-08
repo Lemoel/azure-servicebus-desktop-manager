@@ -3,6 +3,8 @@ package com.azureservicebus.manager.controller;
 import com.azureservicebus.manager.model.CreateQueueResult;
 import com.azureservicebus.manager.model.QueueInfo;
 import com.azureservicebus.manager.model.MessageInfo;
+import com.azureservicebus.manager.model.TopicInfo;
+import com.azureservicebus.manager.model.SubscriptionInfo;
 import com.azureservicebus.manager.service.ServiceBusService;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -23,7 +25,9 @@ import org.slf4j.LoggerFactory;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ResourceBundle;
@@ -45,11 +49,10 @@ public class MainController implements Initializable {
     @FXML private Label connectionStatusLabel;
     @FXML private Label namespaceLabel;
     
-    // Componentes da interface - Filas
+    // Componentes da interface - Abas principais
     @FXML private TabPane mainTabPane;
-    @FXML private Tab queuesTab;
-    @FXML private Tab messagesTab;
-    @FXML private Tab sendMessageTab;
+    @FXML private Tab queuesMainTab;
+    @FXML private Tab topicsMainTab;
     
     // Aba de Filas
     @FXML private Button loadQueuesButton;
@@ -67,6 +70,34 @@ public class MainController implements Initializable {
     @FXML private TextField newQueueNameField;
     @FXML private Button createQueueButton;
     
+    // Aba de Tópicos
+    @FXML private Button loadTopicsButton;
+    @FXML private TextField topicFilterField;
+    @FXML private ListView<String> topicListView;
+    @FXML private TableView<TopicInfo> topicDetailsTable;
+    @FXML private TableColumn<TopicInfo, String> topicNameColumn;
+    @FXML private TableColumn<TopicInfo, String> topicStatusColumn;
+    @FXML private TableColumn<TopicInfo, Integer> topicSubscriptionCountColumn;
+    @FXML private TableColumn<TopicInfo, Double> topicSizeColumn;
+    @FXML private TableColumn<TopicInfo, Void> topicActionsColumn;
+    
+    @FXML private TextField newTopicNameField;
+    @FXML private Button createTopicButton;
+    
+    // Subscriptions
+    @FXML private Label selectedTopicLabel;
+    @FXML private Button loadSubscriptionsButton;
+    @FXML private TableView<SubscriptionInfo> subscriptionsTable;
+    @FXML private TableColumn<SubscriptionInfo, String> subscriptionNameColumn;
+    @FXML private TableColumn<SubscriptionInfo, String> subscriptionStatusColumn;
+    @FXML private TableColumn<SubscriptionInfo, Long> subscriptionTotalMessagesColumn;
+    @FXML private TableColumn<SubscriptionInfo, Long> subscriptionActiveMessagesColumn;
+    @FXML private TableColumn<SubscriptionInfo, Long> subscriptionDeadLetterMessagesColumn;
+    @FXML private TableColumn<SubscriptionInfo, Void> subscriptionActionsColumn;
+    
+    @FXML private TextField newSubscriptionNameField;
+    @FXML private Button createSubscriptionButton;
+    
     // Aba de Mensagens
     @FXML private ComboBox<String> viewQueueComboBox;
     @FXML private Button loadMessagesButton;
@@ -78,7 +109,7 @@ public class MainController implements Initializable {
     @FXML private TableColumn<MessageInfo, Void> messageActionsColumn;
     @FXML private TextArea messageDetailsTextArea;
     
-    // Aba de Envio de Mensagens
+    // Aba de Envio de Mensagens (Filas)
     @FXML private ComboBox<String> sendQueueComboBox;
     @FXML private TextArea messageBodyTextArea;
     @FXML private TextField property1KeyField;
@@ -86,6 +117,27 @@ public class MainController implements Initializable {
     @FXML private TextField property2KeyField;
     @FXML private TextField property2ValueField;
     @FXML private Button sendMessageButton;
+    
+    // Aba de Ver Mensagens de Tópicos/Subscriptions
+    @FXML private ComboBox<String> viewTopicComboBox;
+    @FXML private ComboBox<String> viewSubscriptionComboBox;
+    @FXML private Button loadTopicMessagesButton;
+    @FXML private TableView<MessageInfo> topicMessagesTable;
+    @FXML private TableColumn<MessageInfo, Long> topicSequenceNumberColumn;
+    @FXML private TableColumn<MessageInfo, String> topicMessageIdColumn;
+    @FXML private TableColumn<MessageInfo, String> topicMessageBodyColumn;
+    @FXML private TableColumn<MessageInfo, String> topicEnqueuedTimeColumn;
+    @FXML private TableColumn<MessageInfo, Void> topicMessageActionsColumn;
+    @FXML private TextArea topicMessageDetailsTextArea;
+    
+    // Aba de Envio de Mensagens para Tópicos
+    @FXML private ComboBox<String> sendTopicComboBox;
+    @FXML private TextArea sendTopicMessageBodyTextArea;
+    @FXML private TextField sendTopicProperty1KeyField;
+    @FXML private TextField sendTopicProperty1ValueField;
+    @FXML private TextField sendTopicProperty2KeyField;
+    @FXML private TextField sendTopicProperty2ValueField;
+    @FXML private Button sendToTopicButton;
     
     // Log
     @FXML private TextArea logTextArea;
@@ -97,6 +149,16 @@ public class MainController implements Initializable {
     private ObservableList<String> queueNames = FXCollections.observableArrayList();
     private ObservableList<QueueInfo> queueDetails = FXCollections.observableArrayList();
     private ObservableList<MessageInfo> messages = FXCollections.observableArrayList();
+    
+    // Dados de tópicos e subscriptions
+    private ObservableList<String> topicNames = FXCollections.observableArrayList();
+    private ObservableList<TopicInfo> topicDetails = FXCollections.observableArrayList();
+    private ObservableList<SubscriptionInfo> subscriptionDetails = FXCollections.observableArrayList();
+    private ObservableList<String> subscriptionNames = FXCollections.observableArrayList();
+    private String selectedTopicName = null;
+    
+    // Mensagens de tópicos
+    private ObservableList<MessageInfo> topicMessages = FXCollections.observableArrayList();
     
     // Flags para prevenir loops infinitos nas ComboBoxes
     private boolean updatingViewQueueComboBox = false;
@@ -132,14 +194,27 @@ public class MainController implements Initializable {
         // Estado inicial - desconectado
         updateConnectionStatus();
         
-        // Configurar listas
+        // Configurar listas de filas
         queueListView.setItems(queueNames);
         queueDetailsTable.setItems(queueDetails);
         messagesTable.setItems(messages);
         
-        // Configurar ComboBoxes
+        // Configurar listas de tópicos
+        topicListView.setItems(topicNames);
+        topicDetailsTable.setItems(topicDetails);
+        subscriptionsTable.setItems(subscriptionDetails);
+        
+        // Configurar ComboBoxes de Filas
         viewQueueComboBox.setItems(queueNames);
         sendQueueComboBox.setItems(queueNames);
+        
+        // Configurar ComboBoxes de Tópicos
+        viewTopicComboBox.setItems(topicNames);
+        viewSubscriptionComboBox.setItems(subscriptionNames);
+        sendTopicComboBox.setItems(topicNames);
+        
+        // Configurar tabelas de mensagens de tópicos
+        topicMessagesTable.setItems(topicMessages);
         
         // Placeholder para connection string
         connectionStringTextArea.setPromptText(
@@ -187,6 +262,36 @@ public class MainController implements Initializable {
         
         // Configurar coluna de ações para mensagens
         setupMessageActionsColumn();
+        
+        // Colunas da tabela de tópicos
+        topicNameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
+        topicStatusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
+        topicSubscriptionCountColumn.setCellValueFactory(new PropertyValueFactory<>("subscriptionCount"));
+        topicSizeColumn.setCellValueFactory(new PropertyValueFactory<>("sizeInKB"));
+        
+        // Colunas da tabela de subscriptions
+        subscriptionNameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
+        subscriptionStatusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
+        subscriptionTotalMessagesColumn.setCellValueFactory(new PropertyValueFactory<>("totalMessages"));
+        subscriptionActiveMessagesColumn.setCellValueFactory(new PropertyValueFactory<>("activeMessages"));
+        subscriptionDeadLetterMessagesColumn.setCellValueFactory(new PropertyValueFactory<>("deadLetterMessages"));
+        
+        // Colunas da tabela de mensagens de tópicos
+        topicSequenceNumberColumn.setCellValueFactory(new PropertyValueFactory<>("sequenceNumber"));
+        topicMessageIdColumn.setCellValueFactory(new PropertyValueFactory<>("messageId"));
+        topicMessageBodyColumn.setCellValueFactory(cellData -> 
+            cellData.getValue().messageBodyProperty().map(body -> 
+                body != null && body.length() > 50 ? body.substring(0, 50) + "..." : body
+            )
+        );
+        topicEnqueuedTimeColumn.setCellValueFactory(cellData -> 
+            cellData.getValue().enqueuedTimeProperty().map(time -> 
+                time != null ? time.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")) : "N/A"
+            )
+        );
+        
+        // Configurar coluna de ações para mensagens de tópicos
+        setupTopicMessageActionsColumn();
     }
     
     private void setupActionsColumn() {
@@ -292,6 +397,51 @@ public class MainController implements Initializable {
                         deleteButton.setOnAction(event -> {
                             MessageInfo messageInfo = getTableView().getItems().get(getIndex());
                             handleDeleteMessageFromTable(messageInfo);
+                        });
+                    }
+                    
+                    @Override
+                    protected void updateItem(Void item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (empty) {
+                            setGraphic(null);
+                        } else {
+                            setGraphic(actionBox);
+                        }
+                    }
+                };
+            }
+        });
+    }
+    
+    private void setupTopicMessageActionsColumn() {
+        topicMessageActionsColumn.setCellFactory(new Callback<TableColumn<MessageInfo, Void>, TableCell<MessageInfo, Void>>() {
+            @Override
+            public TableCell<MessageInfo, Void> call(TableColumn<MessageInfo, Void> param) {
+                return new TableCell<MessageInfo, Void>() {
+                    private final Button deleteButton = new Button("✖");
+                    private final HBox actionBox = new HBox(5);
+                    
+                    {
+                        // Configurar botão de deletar mensagem de tópico
+                        deleteButton.setStyle(
+                            "-fx-background-color: #dc3545; " +
+                            "-fx-text-fill: white; " +
+                            "-fx-font-size: 12px; " +
+                            "-fx-padding: 3 6 3 6; " +
+                            "-fx-cursor: hand;"
+                        );
+                        deleteButton.setTooltip(new Tooltip("Remover mensagem"));
+                        
+                        // Configurar container
+                        actionBox.setAlignment(Pos.CENTER);
+                        actionBox.getChildren().add(deleteButton);
+                        
+                        // Event handler
+                        deleteButton.setOnAction(event -> {
+                            MessageInfo messageInfo = getTableView().getItems().get(getIndex());
+                            // Por enquanto apenas mostra aviso - remoção de mensagens de tópicos requer receiver
+                            showAlert("Info", "Remoção de mensagens de subscriptions não está implementada nesta versão.", Alert.AlertType.INFORMATION);
                         });
                     }
                     
@@ -514,6 +664,34 @@ public class MainController implements Initializable {
         // Configurar filtro na ComboBox de envio de mensagens
         setupSendQueueComboBoxFilter();
         
+        // Tópicos
+        loadTopicsButton.setOnAction(e -> handleLoadTopics());
+        topicFilterField.textProperty().addListener((obs, oldVal, newVal) -> filterTopics(newVal));
+        topicListView.getSelectionModel().selectedItemProperty().addListener(
+            (obs, oldVal, newVal) -> handleTopicSelection(newVal)
+        );
+        createTopicButton.setOnAction(e -> handleCreateTopic());
+        
+        // Subscriptions
+        loadSubscriptionsButton.setOnAction(e -> handleLoadSubscriptions());
+        createSubscriptionButton.setOnAction(e -> handleCreateSubscription());
+        
+        // Ver Mensagens de Tópicos
+        loadTopicMessagesButton.setOnAction(e -> handleLoadTopicMessages());
+        topicMessagesTable.getSelectionModel().selectedItemProperty().addListener(
+            (obs, oldVal, newVal) -> handleTopicMessageSelection(newVal)
+        );
+        
+        // Envio de mensagens para tópicos
+        sendToTopicButton.setOnAction(e -> handleSendMessageToTopic());
+        
+        // Carregar subscriptions quando um tópico for selecionado no viewTopicComboBox
+        viewTopicComboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null && !newVal.isEmpty()) {
+                loadSubscriptionsForTopic(newVal);
+            }
+        });
+        
         // Log
         clearLogButton.setOnAction(e -> logTextArea.clear());
     }
@@ -589,20 +767,18 @@ public class MainController implements Initializable {
             String namespace = serviceBusService.extractNamespace();
             namespaceLabel.setText("Namespace: " + (namespace != null ? namespace : "N/A"));
             
-            // Habilitar abas
-            queuesTab.setDisable(false);
-            messagesTab.setDisable(false);
-            sendMessageTab.setDisable(false);
+            // Habilitar abas principais
+            queuesMainTab.setDisable(false);
+            topicsMainTab.setDisable(false);
             
         } else {
             connectionStatusLabel.setText("❌ Desconectado");
             connectionStatusLabel.setStyle("-fx-text-fill: red;");
             namespaceLabel.setText("Namespace: N/A");
             
-            // Desabilitar abas
-            queuesTab.setDisable(true);
-            messagesTab.setDisable(true);
-            sendMessageTab.setDisable(true);
+            // Desabilitar abas principais
+            queuesMainTab.setDisable(true);
+            topicsMainTab.setDisable(true);
             
             // Limpar dados de forma segura para evitar IndexOutOfBoundsException
             // Primeiro limpar seleções
@@ -1097,6 +1273,497 @@ public class MainController implements Initializable {
         };
         
         new Thread(sendTask).start();
+    }
+    
+    // ===========================================================================================
+    // MÉTODOS PARA TÓPICOS
+    // ===========================================================================================
+    
+    private void handleLoadTopics() {
+        if (!serviceBusService.isConnected()) {
+            showAlert("Erro", "Não conectado ao Service Bus", Alert.AlertType.ERROR);
+            return;
+        }
+        
+        loadTopicsButton.setDisable(true);
+        loadTopicsButton.setText("Carregando...");
+        
+        Task<ObservableList<String>> loadTask = new Task<ObservableList<String>>() {
+            @Override
+            protected ObservableList<String> call() throws Exception {
+                return serviceBusService.listTopicNamesAsync().get();
+            }
+            
+            @Override
+            protected void succeeded() {
+                Platform.runLater(() -> {
+                    topicNames.setAll(getValue());
+                    loadTopicsButton.setDisable(false);
+                    loadTopicsButton.setText("Carregar Tópicos");
+                    addLogMessage(String.format("Carregados %d tópicos", getValue().size()));
+                });
+            }
+            
+            @Override
+            protected void failed() {
+                Platform.runLater(() -> {
+                    loadTopicsButton.setDisable(false);
+                    loadTopicsButton.setText("Carregar Tópicos");
+                    showAlert("Erro", "Erro ao carregar tópicos: " + getException().getMessage(), Alert.AlertType.ERROR);
+                });
+            }
+        };
+        
+        new Thread(loadTask).start();
+    }
+    
+    private void filterTopics(String filter) {
+        if (filter == null || filter.trim().isEmpty()) {
+            topicListView.setItems(topicNames);
+            return;
+        }
+        
+        ObservableList<String> filteredTopics = topicNames.filtered(
+            topicName -> topicName.toLowerCase().contains(filter.toLowerCase())
+        );
+        topicListView.setItems(filteredTopics);
+    }
+    
+    private void handleTopicSelection(String selectedTopic) {
+        if (selectedTopic == null || !serviceBusService.isConnected()) {
+            return;
+        }
+        
+        selectedTopicName = selectedTopic;
+        selectedTopicLabel.setText("Tópico selecionado: " + selectedTopic);
+        
+        // Habilitar botões de subscription
+        loadSubscriptionsButton.setDisable(false);
+        newSubscriptionNameField.setDisable(false);
+        createSubscriptionButton.setDisable(false);
+        
+        // Carregar detalhes do tópico
+        Task<TopicInfo> detailsTask = new Task<TopicInfo>() {
+            @Override
+            protected TopicInfo call() throws Exception {
+                return serviceBusService.getTopicDetailsAsync(selectedTopic).get();
+            }
+            
+            @Override
+            protected void succeeded() {
+                Platform.runLater(() -> {
+                    topicDetails.setAll(getValue());
+                    addLogMessage(String.format("Detalhes carregados para tópico '%s'", selectedTopic));
+                });
+            }
+            
+            @Override
+            protected void failed() {
+                Platform.runLater(() -> showAlert("Erro", "Erro ao carregar detalhes: " + getException().getMessage(), Alert.AlertType.ERROR));
+            }
+        };
+        
+        new Thread(detailsTask).start();
+        
+        // Carregar subscriptions automaticamente
+        handleLoadSubscriptions();
+    }
+    
+    private void handleCreateTopic() {
+        String topicName = newTopicNameField.getText().trim();
+        
+        if (topicName.isEmpty()) {
+            showAlert("Erro", "Digite um nome para o tópico", Alert.AlertType.ERROR);
+            return;
+        }
+        
+        createTopicButton.setDisable(true);
+        
+        Task<CreateQueueResult> createTask = new Task<CreateQueueResult>() {
+            @Override
+            protected CreateQueueResult call() throws Exception {
+                return serviceBusService.createTopicAsync(topicName).get();
+            }
+            
+            @Override
+            protected void succeeded() {
+                Platform.runLater(() -> {
+                    createTopicButton.setDisable(false);
+                    newTopicNameField.clear();
+                    
+                    CreateQueueResult result = getValue();
+                    switch (result) {
+                        case CREATED:
+                            addLogMessage(String.format("Tópico '%s' criado com sucesso!", topicName));
+                            showAlert("Sucesso", 
+                                String.format("Tópico '%s' foi criado com sucesso!", topicName), 
+                                Alert.AlertType.INFORMATION);
+                            handleLoadTopics();
+                            break;
+                            
+                        case ALREADY_EXISTS:
+                            addLogMessage(String.format("Tópico '%s' já existe no namespace", topicName));
+                            showAlert("Informação", 
+                                String.format("O tópico '%s' já existe no namespace.\nVocê pode utilizá-lo normalmente.", topicName), 
+                                Alert.AlertType.WARNING);
+                            handleLoadTopics();
+                            break;
+                            
+                        case ERROR:
+                            showAlert("Erro", 
+                                String.format("Erro ao criar tópico '%s'. Verifique os logs para mais detalhes.", topicName), 
+                                Alert.AlertType.ERROR);
+                            break;
+                    }
+                });
+            }
+            
+            @Override
+            protected void failed() {
+                Platform.runLater(() -> {
+                    createTopicButton.setDisable(false);
+                    showAlert("Erro", "Erro ao criar tópico: " + getException().getMessage(), Alert.AlertType.ERROR);
+                });
+            }
+        };
+        
+        new Thread(createTask).start();
+    }
+    
+    private void handleLoadSubscriptions() {
+        if (selectedTopicName == null) {
+            showAlert("Erro", "Selecione um tópico primeiro", Alert.AlertType.ERROR);
+            return;
+        }
+        
+        loadSubscriptionsButton.setDisable(true);
+        loadSubscriptionsButton.setText("Carregando...");
+        
+        Task<ObservableList<String>> loadTask = new Task<ObservableList<String>>() {
+            @Override
+            protected ObservableList<String> call() throws Exception {
+                return serviceBusService.listSubscriptionNamesAsync(selectedTopicName).get();
+            }
+            
+            @Override
+            protected void succeeded() {
+                Platform.runLater(() -> {
+                    ObservableList<String> subscriptionNames = getValue();
+                    
+                    // Carregar detalhes de cada subscription
+                    subscriptionDetails.clear();
+                    
+                    if (subscriptionNames.isEmpty()) {
+                        loadSubscriptionsButton.setDisable(false);
+                        loadSubscriptionsButton.setText("Carregar Subscriptions");
+                        addLogMessage(String.format("Nenhuma subscription encontrada no tópico '%s'", selectedTopicName));
+                        return;
+                    }
+                    
+                    // Carregar detalhes de todas as subscriptions
+                    Task<Void> detailsTask = new Task<Void>() {
+                        @Override
+                        protected Void call() throws Exception {
+                            List<SubscriptionInfo> details = new ArrayList<>();
+                            for (String subName : subscriptionNames) {
+                                SubscriptionInfo subInfo = serviceBusService.getSubscriptionDetailsAsync(
+                                    selectedTopicName, subName).get();
+                                details.add(subInfo);
+                            }
+                            
+                            Platform.runLater(() -> subscriptionDetails.setAll(details));
+                            
+                            return null;
+                        }
+                        
+                        @Override
+                        protected void succeeded() {
+                            Platform.runLater(() -> {
+                                loadSubscriptionsButton.setDisable(false);
+                                loadSubscriptionsButton.setText("Carregar Subscriptions");
+                                addLogMessage(String.format("Carregadas %d subscriptions do tópico '%s'", 
+                                    subscriptionNames.size(), selectedTopicName));
+                            });
+                        }
+                        
+                        @Override
+                        protected void failed() {
+                            Platform.runLater(() -> {
+                                loadSubscriptionsButton.setDisable(false);
+                                loadSubscriptionsButton.setText("Carregar Subscriptions");
+                                showAlert("Erro", "Erro ao carregar detalhes das subscriptions: " + 
+                                    getException().getMessage(), Alert.AlertType.ERROR);
+                            });
+                        }
+                    };
+                    
+                    new Thread(detailsTask).start();
+                });
+            }
+            
+            @Override
+            protected void failed() {
+                Platform.runLater(() -> {
+                    loadSubscriptionsButton.setDisable(false);
+                    loadSubscriptionsButton.setText("Carregar Subscriptions");
+                    showAlert("Erro", "Erro ao carregar subscriptions: " + getException().getMessage(), Alert.AlertType.ERROR);
+                });
+            }
+        };
+        
+        new Thread(loadTask).start();
+    }
+    
+    private void handleCreateSubscription() {
+        if (selectedTopicName == null) {
+            showAlert("Erro", "Selecione um tópico primeiro", Alert.AlertType.ERROR);
+            return;
+        }
+        
+        String subscriptionName = newSubscriptionNameField.getText().trim();
+        
+        if (subscriptionName.isEmpty()) {
+            showAlert("Erro", "Digite um nome para a subscription", Alert.AlertType.ERROR);
+            return;
+        }
+        
+        createSubscriptionButton.setDisable(true);
+        
+        Task<CreateQueueResult> createTask = new Task<CreateQueueResult>() {
+            @Override
+            protected CreateQueueResult call() throws Exception {
+                return serviceBusService.createSubscriptionAsync(selectedTopicName, subscriptionName).get();
+            }
+            
+            @Override
+            protected void succeeded() {
+                Platform.runLater(() -> {
+                    createSubscriptionButton.setDisable(false);
+                    newSubscriptionNameField.clear();
+                    
+                    CreateQueueResult result = getValue();
+                    switch (result) {
+                        case CREATED:
+                            addLogMessage(String.format("Subscription '%s' criada com sucesso no tópico '%s'!", 
+                                subscriptionName, selectedTopicName));
+                            showAlert("Sucesso", 
+                                String.format("Subscription '%s' foi criada com sucesso!", subscriptionName), 
+                                Alert.AlertType.INFORMATION);
+                            handleLoadSubscriptions();
+                            break;
+                            
+                        case ALREADY_EXISTS:
+                            addLogMessage(String.format("Subscription '%s' já existe no tópico '%s'", 
+                                subscriptionName, selectedTopicName));
+                            showAlert("Informação", 
+                                String.format("A subscription '%s' já existe no tópico '%s'.\nVocê pode utilizá-la normalmente.", 
+                                    subscriptionName, selectedTopicName), 
+                                Alert.AlertType.WARNING);
+                            handleLoadSubscriptions();
+                            break;
+                            
+                        case ERROR:
+                            showAlert("Erro", 
+                                String.format("Erro ao criar subscription '%s'. Verifique os logs para mais detalhes.", 
+                                    subscriptionName), 
+                                Alert.AlertType.ERROR);
+                            break;
+                    }
+                });
+            }
+            
+            @Override
+            protected void failed() {
+                Platform.runLater(() -> {
+                    createSubscriptionButton.setDisable(false);
+                    showAlert("Erro", "Erro ao criar subscription: " + getException().getMessage(), Alert.AlertType.ERROR);
+                });
+            }
+        };
+        
+        new Thread(createTask).start();
+    }
+    
+    // ===========================================================================================
+    // MÉTODOS PARA MENSAGENS DE TÓPICOS
+    // ===========================================================================================
+    
+    private void handleLoadTopicMessages() {
+        String selectedTopic = viewTopicComboBox.getValue();
+        String selectedSubscription = viewSubscriptionComboBox.getValue();
+        
+        if (selectedTopic == null || selectedTopic.isEmpty()) {
+            showAlert("Erro", "Selecione um tópico", Alert.AlertType.ERROR);
+            return;
+        }
+        
+        if (selectedSubscription == null || selectedSubscription.isEmpty()) {
+            showAlert("Erro", "Selecione uma subscription", Alert.AlertType.ERROR);
+            return;
+        }
+        
+        loadTopicMessagesButton.setDisable(true);
+        loadTopicMessagesButton.setText("Carregando...");
+        
+        Task<ObservableList<MessageInfo>> loadTask = new Task<ObservableList<MessageInfo>>() {
+            @Override
+            protected ObservableList<MessageInfo> call() throws Exception {
+                return serviceBusService.peekSubscriptionMessagesAsync(selectedTopic, selectedSubscription, 20).get();
+            }
+            
+            @Override
+            protected void succeeded() {
+                Platform.runLater(() -> {
+                    topicMessages.setAll(getValue());
+                    loadTopicMessagesButton.setDisable(false);
+                    loadTopicMessagesButton.setText("Carregar Mensagens");
+                    addLogMessage(String.format("Carregadas %d mensagens da subscription '%s' do tópico '%s'", 
+                        getValue().size(), selectedSubscription, selectedTopic));
+                });
+            }
+            
+            @Override
+            protected void failed() {
+                Platform.runLater(() -> {
+                    loadTopicMessagesButton.setDisable(false);
+                    loadTopicMessagesButton.setText("Carregar Mensagens");
+                    showAlert("Erro", "Erro ao carregar mensagens: " + getException().getMessage(), Alert.AlertType.ERROR);
+                });
+            }
+        };
+        
+        new Thread(loadTask).start();
+    }
+    
+    private void handleTopicMessageSelection(MessageInfo selectedMessage) {
+        if (selectedMessage == null) {
+            topicMessageDetailsTextArea.clear();
+            return;
+        }
+        
+        StringBuilder details = new StringBuilder();
+        details.append("=== DETALHES DA MENSAGEM ===\n\n");
+        details.append("Sequence Number: ").append(selectedMessage.getSequenceNumber()).append("\n");
+        details.append("Message ID: ").append(selectedMessage.getMessageId()).append("\n");
+        details.append("Content Type: ").append(selectedMessage.getContentType()).append("\n");
+        details.append("Enqueued Time: ").append(selectedMessage.getFormattedEnqueuedTime()).append("\n");
+        details.append("Size: ").append(selectedMessage.getFormattedSize()).append("\n");
+        details.append("\n=== CORPO DA MENSAGEM ===\n");
+        
+        String messageBody = selectedMessage.getMessageBody();
+        if (messageBody != null && !messageBody.trim().isEmpty()) {
+            if (isValidJson(messageBody.trim())) {
+                details.append(formatJson(messageBody.trim()));
+            } else {
+                details.append(messageBody);
+            }
+        } else {
+            details.append("(Mensagem vazia)");
+        }
+        
+        details.append("\n\n=== PROPRIEDADES ===\n");
+        details.append(selectedMessage.getApplicationPropertiesAsString());
+        
+        topicMessageDetailsTextArea.setText(details.toString());
+    }
+    
+    private void handleSendMessageToTopic() {
+        String selectedTopic = sendTopicComboBox.getValue();
+        String messageBody = sendTopicMessageBodyTextArea.getText().trim();
+        
+        if (selectedTopic == null) {
+            showAlert("Erro", "Selecione um tópico", Alert.AlertType.ERROR);
+            return;
+        }
+        
+        if (messageBody.isEmpty()) {
+            showAlert("Erro", "Digite o corpo da mensagem", Alert.AlertType.ERROR);
+            return;
+        }
+        
+        // Construir propriedades
+        Map<String, Object> properties = new HashMap<>();
+        if (!sendTopicProperty1KeyField.getText().trim().isEmpty() && !sendTopicProperty1ValueField.getText().trim().isEmpty()) {
+            properties.put(sendTopicProperty1KeyField.getText().trim(), sendTopicProperty1ValueField.getText().trim());
+        }
+        if (!sendTopicProperty2KeyField.getText().trim().isEmpty() && !sendTopicProperty2ValueField.getText().trim().isEmpty()) {
+            properties.put(sendTopicProperty2KeyField.getText().trim(), sendTopicProperty2ValueField.getText().trim());
+        }
+        
+        sendToTopicButton.setDisable(true);
+        sendToTopicButton.setText("Enviando...");
+        
+        Task<Boolean> sendTask = new Task<Boolean>() {
+            @Override
+            protected Boolean call() throws Exception {
+                return serviceBusService.sendMessageToTopicAsync(selectedTopic, messageBody, properties).get();
+            }
+            
+            @Override
+            protected void succeeded() {
+                Platform.runLater(() -> {
+                    sendToTopicButton.setDisable(false);
+                    sendToTopicButton.setText("Publicar no Tópico");
+                    
+                    if (getValue()) {
+                        addLogMessage(String.format("Mensagem publicada no tópico '%s'", selectedTopic));
+                        
+                        showAlert("Sucesso", 
+                            String.format("Mensagem publicada com sucesso no tópico '%s'!\nTodas as subscriptions receberão a mensagem.", selectedTopic), 
+                            Alert.AlertType.INFORMATION);
+                        
+                        // Limpar campos de propriedades
+                        sendTopicProperty1KeyField.clear();
+                        sendTopicProperty1ValueField.clear();
+                        sendTopicProperty2KeyField.clear();
+                        sendTopicProperty2ValueField.clear();
+                    }
+                });
+            }
+            
+            @Override
+            protected void failed() {
+                Platform.runLater(() -> {
+                    sendToTopicButton.setDisable(false);
+                    sendToTopicButton.setText("Publicar no Tópico");
+                    showAlert("Erro", "Erro ao publicar mensagem: " + getException().getMessage(), Alert.AlertType.ERROR);
+                });
+            }
+        };
+        
+        new Thread(sendTask).start();
+    }
+    
+    private void loadSubscriptionsForTopic(String topicName) {
+        if (topicName == null || topicName.isEmpty()) {
+            subscriptionNames.clear();
+            return;
+        }
+        
+        Task<ObservableList<String>> loadTask = new Task<ObservableList<String>>() {
+            @Override
+            protected ObservableList<String> call() throws Exception {
+                return serviceBusService.listSubscriptionNamesAsync(topicName).get();
+            }
+            
+            @Override
+            protected void succeeded() {
+                Platform.runLater(() -> {
+                    subscriptionNames.setAll(getValue());
+                    addLogMessage(String.format("Carregadas %d subscriptions do tópico '%s'", getValue().size(), topicName));
+                });
+            }
+            
+            @Override
+            protected void failed() {
+                Platform.runLater(() -> {
+                    subscriptionNames.clear();
+                    logger.warn("Erro ao carregar subscriptions: " + getException().getMessage());
+                });
+            }
+        };
+        
+        new Thread(loadTask).start();
     }
     
     private void addLogMessage(String message) {

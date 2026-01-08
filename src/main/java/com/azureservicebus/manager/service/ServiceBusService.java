@@ -9,6 +9,8 @@ import com.azure.messaging.servicebus.models.SubQueue;
 import com.azureservicebus.manager.model.CreateQueueResult;
 import com.azureservicebus.manager.model.MessageInfo;
 import com.azureservicebus.manager.model.QueueInfo;
+import com.azureservicebus.manager.model.SubscriptionInfo;
+import com.azureservicebus.manager.model.TopicInfo;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import org.slf4j.Logger;
@@ -679,6 +681,491 @@ public class ServiceBusService {
             logger.error("Erro ao extrair corpo da mensagem", e);
             return String.format("[Erro ao ler mensagem: %s]", e.getMessage());
         }
+    }
+    
+    // ===========================================================================================
+    // MÉTODOS PARA TÓPICOS (TOPICS)
+    // ===========================================================================================
+    
+    /**
+     * Lista apenas os nomes dos tópicos (operação rápida)
+     */
+    public CompletableFuture<ObservableList<String>> listTopicNamesAsync() {
+        return CompletableFuture.supplyAsync(() -> {
+            if (!isConnected()) {
+                throw new IllegalStateException("Não conectado ao Service Bus");
+            }
+            
+            try {
+                List<String> topicNames = new ArrayList<>();
+                
+                adminClient.listTopics().forEach(topicProperties -> {
+                    topicNames.add(topicProperties.getName());
+                });
+                
+                topicNames.sort(String::compareToIgnoreCase);
+                
+                logMessage(String.format("Carregados %d nomes de tópicos", topicNames.size()));
+                return FXCollections.observableArrayList(topicNames);
+                
+            } catch (Exception e) {
+                logError("Erro ao listar nomes dos tópicos", e);
+                throw new RuntimeException("Erro ao listar tópicos", e);
+            }
+        }, executorService);
+    }
+    
+    /**
+     * Obtém detalhes completos de um tópico específico
+     */
+    public CompletableFuture<TopicInfo> getTopicDetailsAsync(String topicName) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (!isConnected()) {
+                throw new IllegalStateException("Não conectado ao Service Bus");
+            }
+            
+            try {
+                // Obter propriedades do tópico
+                TopicProperties topicProperties = adminClient.getTopic(topicName);
+                
+                // Obter runtime info
+                TopicRuntimeProperties runtimeProperties = adminClient.getTopicRuntimeProperties(topicName);
+                
+                TopicInfo topicInfo = new TopicInfo(topicName);
+                
+                // Propriedades básicas
+                topicInfo.setStatus(topicProperties.getStatus().toString());
+                topicInfo.setMaxSizeInMB(topicProperties.getMaxSizeInMegabytes());
+                topicInfo.setPartitioningEnabled(topicProperties.isPartitioningEnabled());
+                topicInfo.setDuplicateDetectionEnabled(topicProperties.isDuplicateDetectionRequired());
+                topicInfo.setBatchedOperationsEnabled(topicProperties.isBatchedOperationsEnabled());
+                // topicInfo.setOrderingSupported(topicProperties.isSupportOrdering()); // Método não disponível nesta versão da SDK
+                topicInfo.setDefaultMessageTimeToLive(topicProperties.getDefaultMessageTimeToLive());
+                topicInfo.setDuplicateDetectionHistoryTimeWindow(topicProperties.getDuplicateDetectionHistoryTimeWindow());
+                
+                // Runtime properties
+                topicInfo.setScheduledMessages(runtimeProperties.getScheduledMessageCount());
+                topicInfo.setSizeInKB(runtimeProperties.getSizeInBytes() / 1024.0);
+                topicInfo.setSubscriptionCount(runtimeProperties.getSubscriptionCount());
+                
+                // Timestamps
+                if (runtimeProperties.getCreatedAt() != null) {
+                    topicInfo.setCreatedAt(LocalDateTime.ofInstant(
+                        runtimeProperties.getCreatedAt().toInstant(), 
+                        ZoneId.systemDefault()
+                    ));
+                }
+                
+                if (runtimeProperties.getUpdatedAt() != null) {
+                    topicInfo.setUpdatedAt(LocalDateTime.ofInstant(
+                        runtimeProperties.getUpdatedAt().toInstant(), 
+                        ZoneId.systemDefault()
+                    ));
+                }
+                
+                if (runtimeProperties.getAccessedAt() != null) {
+                    topicInfo.setAccessedAt(LocalDateTime.ofInstant(
+                        runtimeProperties.getAccessedAt().toInstant(), 
+                        ZoneId.systemDefault()
+                    ));
+                }
+                
+                logMessage(String.format("Detalhes carregados para tópico '%s'", topicName));
+                return topicInfo;
+                
+            } catch (Exception e) {
+                logError(String.format("Erro ao obter detalhes do tópico '%s'", topicName), e);
+                throw new RuntimeException("Erro ao obter detalhes do tópico", e);
+            }
+        }, executorService);
+    }
+    
+    /**
+     * Cria um novo tópico
+     */
+    public CompletableFuture<CreateQueueResult> createTopicAsync(String topicName) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (!isConnected()) {
+                throw new IllegalStateException("Não conectado ao Service Bus");
+            }
+            
+            try {
+                CreateTopicOptions options = new CreateTopicOptions();
+                adminClient.createTopic(topicName, options);
+                
+                logMessage(String.format("Tópico '%s' criado com sucesso", topicName));
+                return CreateQueueResult.CREATED;
+                
+            } catch (com.azure.core.exception.ResourceExistsException e) {
+                logMessage(String.format("Tópico '%s' já existe no namespace", topicName));
+                return CreateQueueResult.ALREADY_EXISTS;
+                
+            } catch (Exception e) {
+                logError(String.format("Erro ao criar tópico '%s'", topicName), e);
+                return CreateQueueResult.ERROR;
+            }
+        }, executorService);
+    }
+    
+    /**
+     * Remove um tópico
+     */
+    public CompletableFuture<Boolean> deleteTopicAsync(String topicName) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (!isConnected()) {
+                throw new IllegalStateException("Não conectado ao Service Bus");
+            }
+            
+            try {
+                adminClient.deleteTopic(topicName);
+                
+                logMessage(String.format("Tópico '%s' removido com sucesso", topicName));
+                return true;
+                
+            } catch (Exception e) {
+                logError(String.format("Erro ao remover tópico '%s'", topicName), e);
+                throw new RuntimeException("Erro ao remover tópico", e);
+            }
+        }, executorService);
+    }
+    
+    /**
+     * Envia uma mensagem para um tópico
+     */
+    public CompletableFuture<Boolean> sendMessageToTopicAsync(String topicName, String messageBody, 
+                                                             Map<String, Object> properties) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (!isConnected()) {
+                throw new IllegalStateException("Não conectado ao Service Bus");
+            }
+            
+            try {
+                // Criar cliente sender para tópico
+                try (ServiceBusSenderClient sender = new ServiceBusClientBuilder()
+                         .connectionString(connectionString)
+                         .sender()
+                         .topicName(topicName)
+                         .buildClient()) {
+                    
+                    // Criar mensagem
+                    ServiceBusMessage message = new ServiceBusMessage(messageBody);
+                    
+                    // Adicionar propriedades customizadas se fornecidas
+                    if (properties != null && !properties.isEmpty()) {
+                        for (Map.Entry<String, Object> entry : properties.entrySet()) {
+                            message.getApplicationProperties().put(entry.getKey(), entry.getValue());
+                        }
+                    }
+                    
+                    // Enviar mensagem
+                    sender.sendMessage(message);
+                    
+                    logMessage(String.format("Mensagem enviada com sucesso para tópico '%s'", topicName));
+                    return true;
+                }
+                
+            } catch (Exception e) {
+                logError(String.format("Erro ao enviar mensagem para tópico '%s'", topicName), e);
+                throw new RuntimeException("Erro ao enviar mensagem", e);
+            }
+        }, executorService);
+    }
+    
+    // ===========================================================================================
+    // MÉTODOS PARA SUBSCRIPTIONS
+    // ===========================================================================================
+    
+    /**
+     * Lista apenas os nomes das subscriptions de um tópico (operação rápida)
+     */
+    public CompletableFuture<ObservableList<String>> listSubscriptionNamesAsync(String topicName) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (!isConnected()) {
+                throw new IllegalStateException("Não conectado ao Service Bus");
+            }
+            
+            try {
+                List<String> subscriptionNames = new ArrayList<>();
+                
+                adminClient.listSubscriptions(topicName).forEach(subscriptionProperties -> {
+                    subscriptionNames.add(subscriptionProperties.getSubscriptionName());
+                });
+                
+                subscriptionNames.sort(String::compareToIgnoreCase);
+                
+                logMessage(String.format("Carregadas %d subscriptions do tópico '%s'", 
+                    subscriptionNames.size(), topicName));
+                return FXCollections.observableArrayList(subscriptionNames);
+                
+            } catch (Exception e) {
+                logError(String.format("Erro ao listar subscriptions do tópico '%s'", topicName), e);
+                throw new RuntimeException("Erro ao listar subscriptions", e);
+            }
+        }, executorService);
+    }
+    
+    /**
+     * Obtém detalhes completos de uma subscription específica
+     */
+    public CompletableFuture<SubscriptionInfo> getSubscriptionDetailsAsync(String topicName, String subscriptionName) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (!isConnected()) {
+                throw new IllegalStateException("Não conectado ao Service Bus");
+            }
+            
+            try {
+                // Obter propriedades da subscription
+                SubscriptionProperties subProperties = adminClient.getSubscription(topicName, subscriptionName);
+                
+                // Obter runtime info
+                SubscriptionRuntimeProperties runtimeProperties = 
+                    adminClient.getSubscriptionRuntimeProperties(topicName, subscriptionName);
+                
+                SubscriptionInfo subscriptionInfo = new SubscriptionInfo(topicName, subscriptionName);
+                
+                // Propriedades básicas
+                subscriptionInfo.setStatus(subProperties.getStatus().toString());
+                subscriptionInfo.setMaxDeliveryCount(subProperties.getMaxDeliveryCount());
+                subscriptionInfo.setLockDuration(subProperties.getLockDuration());
+                subscriptionInfo.setDefaultMessageTimeToLive(subProperties.getDefaultMessageTimeToLive());
+                subscriptionInfo.setAutoDeleteOnIdle(subProperties.getAutoDeleteOnIdle());
+                subscriptionInfo.setSessionRequired(subProperties.isSessionRequired());
+                subscriptionInfo.setDeadLetteringOnMessageExpiration(subProperties.isDeadLetteringOnMessageExpiration());
+                // subscriptionInfo.setDeadLetteringOnFilterEvaluationException(
+                //     subProperties.isDeadLetteringOnFilterEvaluationException()); // Método não disponível nesta versão da SDK
+                subscriptionInfo.setBatchedOperationsEnabled(subProperties.isBatchedOperationsEnabled());
+                
+                // Runtime properties
+                subscriptionInfo.setTotalMessages(runtimeProperties.getTotalMessageCount());
+                subscriptionInfo.setActiveMessages(runtimeProperties.getActiveMessageCount());
+                subscriptionInfo.setDeadLetterMessages(runtimeProperties.getDeadLetterMessageCount());
+                // subscriptionInfo.setScheduledMessages(runtimeProperties.getScheduledMessageCount()); // Método não disponível nesta versão da SDK
+                subscriptionInfo.setTransferMessageCount(runtimeProperties.getTransferMessageCount());
+                subscriptionInfo.setTransferDeadLetterMessageCount(runtimeProperties.getTransferDeadLetterMessageCount());
+                
+                // Timestamps
+                if (runtimeProperties.getCreatedAt() != null) {
+                    subscriptionInfo.setCreatedAt(LocalDateTime.ofInstant(
+                        runtimeProperties.getCreatedAt().toInstant(), 
+                        ZoneId.systemDefault()
+                    ));
+                }
+                
+                if (runtimeProperties.getUpdatedAt() != null) {
+                    subscriptionInfo.setUpdatedAt(LocalDateTime.ofInstant(
+                        runtimeProperties.getUpdatedAt().toInstant(), 
+                        ZoneId.systemDefault()
+                    ));
+                }
+                
+                if (runtimeProperties.getAccessedAt() != null) {
+                    subscriptionInfo.setAccessedAt(LocalDateTime.ofInstant(
+                        runtimeProperties.getAccessedAt().toInstant(), 
+                        ZoneId.systemDefault()
+                    ));
+                }
+                
+                logMessage(String.format("Detalhes carregados para subscription '%s' do tópico '%s'", 
+                    subscriptionName, topicName));
+                return subscriptionInfo;
+                
+            } catch (Exception e) {
+                logError(String.format("Erro ao obter detalhes da subscription '%s' do tópico '%s'", 
+                    subscriptionName, topicName), e);
+                throw new RuntimeException("Erro ao obter detalhes da subscription", e);
+            }
+        }, executorService);
+    }
+    
+    /**
+     * Cria uma nova subscription em um tópico
+     */
+    public CompletableFuture<CreateQueueResult> createSubscriptionAsync(String topicName, String subscriptionName) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (!isConnected()) {
+                throw new IllegalStateException("Não conectado ao Service Bus");
+            }
+            
+            try {
+                CreateSubscriptionOptions options = new CreateSubscriptionOptions();
+                adminClient.createSubscription(topicName, subscriptionName, options);
+                
+                logMessage(String.format("Subscription '%s' criada com sucesso no tópico '%s'", 
+                    subscriptionName, topicName));
+                return CreateQueueResult.CREATED;
+                
+            } catch (com.azure.core.exception.ResourceExistsException e) {
+                logMessage(String.format("Subscription '%s' já existe no tópico '%s'", 
+                    subscriptionName, topicName));
+                return CreateQueueResult.ALREADY_EXISTS;
+                
+            } catch (Exception e) {
+                logError(String.format("Erro ao criar subscription '%s' no tópico '%s'", 
+                    subscriptionName, topicName), e);
+                return CreateQueueResult.ERROR;
+            }
+        }, executorService);
+    }
+    
+    /**
+     * Remove uma subscription de um tópico
+     */
+    public CompletableFuture<Boolean> deleteSubscriptionAsync(String topicName, String subscriptionName) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (!isConnected()) {
+                throw new IllegalStateException("Não conectado ao Service Bus");
+            }
+            
+            try {
+                adminClient.deleteSubscription(topicName, subscriptionName);
+                
+                logMessage(String.format("Subscription '%s' removida do tópico '%s' com sucesso", 
+                    subscriptionName, topicName));
+                return true;
+                
+            } catch (Exception e) {
+                logError(String.format("Erro ao remover subscription '%s' do tópico '%s'", 
+                    subscriptionName, topicName), e);
+                throw new RuntimeException("Erro ao remover subscription", e);
+            }
+        }, executorService);
+    }
+    
+    /**
+     * Visualiza mensagens de uma subscription sem removê-las
+     */
+    public CompletableFuture<ObservableList<MessageInfo>> peekSubscriptionMessagesAsync(
+            String topicName, String subscriptionName, int maxMessages) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (!isConnected()) {
+                throw new IllegalStateException("Não conectado ao Service Bus");
+            }
+            
+            try {
+                List<MessageInfo> messages = new ArrayList<>();
+                
+                // Criar cliente receiver para visualizar mensagens da subscription
+                try (ServiceBusReceiverClient receiver = new ServiceBusClientBuilder()
+                         .connectionString(connectionString)
+                         .receiver()
+                         .topicName(topicName)
+                         .subscriptionName(subscriptionName)
+                         .buildClient()) {
+                    
+                    // Peek mensagens (visualizar sem remover)
+                    Iterable<ServiceBusReceivedMessage> peekedMessages = receiver.peekMessages(maxMessages);
+                    
+                    for (ServiceBusReceivedMessage message : peekedMessages) {
+                        MessageInfo messageInfo = new MessageInfo();
+                        
+                        messageInfo.setSequenceNumber(message.getSequenceNumber());
+                        messageInfo.setMessageId(message.getMessageId());
+                        
+                        String messageBody = extractMessageBody(message);
+                        messageInfo.setMessageBody(messageBody);
+                        
+                        messageInfo.setContentType(message.getContentType());
+                        
+                        if (message.getEnqueuedTime() != null) {
+                            messageInfo.setEnqueuedTime(LocalDateTime.ofInstant(
+                                message.getEnqueuedTime().toInstant(), 
+                                ZoneId.systemDefault()
+                            ));
+                        }
+                        
+                        if (message.getApplicationProperties() != null && !message.getApplicationProperties().isEmpty()) {
+                            messageInfo.setApplicationProperties(new HashMap<>(message.getApplicationProperties()));
+                        }
+                        
+                        messages.add(messageInfo);
+                    }
+                }
+                
+                logMessage(String.format("Carregadas %d mensagens da subscription '%s' do tópico '%s'", 
+                    messages.size(), subscriptionName, topicName));
+                return FXCollections.observableArrayList(messages);
+                
+            } catch (Exception e) {
+                logError(String.format("Erro ao visualizar mensagens da subscription '%s' do tópico '%s'", 
+                    subscriptionName, topicName), e);
+                throw new RuntimeException("Erro ao visualizar mensagens", e);
+            }
+        }, executorService);
+    }
+    
+    /**
+     * Limpa todas as mensagens de uma subscription
+     */
+    public CompletableFuture<Integer> clearSubscriptionMessagesAsync(String topicName, String subscriptionName) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (!isConnected()) {
+                throw new IllegalStateException("Não conectado ao Service Bus");
+            }
+            
+            try {
+                int messagesDeleted = 0;
+                
+                // Limpar mensagens ativas
+                try (ServiceBusReceiverClient receiver = new ServiceBusClientBuilder()
+                         .connectionString(connectionString)
+                         .receiver()
+                         .topicName(topicName)
+                         .subscriptionName(subscriptionName)
+                         .buildClient()) {
+                    
+                    while (true) {
+                        Iterable<ServiceBusReceivedMessage> receivedMessages = 
+                            receiver.receiveMessages(100, java.time.Duration.ofSeconds(5));
+                        
+                        boolean hasMessages = false;
+                        for (ServiceBusReceivedMessage message : receivedMessages) {
+                            hasMessages = true;
+                            receiver.complete(message);
+                            messagesDeleted++;
+                        }
+                        
+                        if (!hasMessages) {
+                            break;
+                        }
+                    }
+                }
+                
+                // Limpar mensagens dead letter
+                try (ServiceBusReceiverClient dlqReceiver = new ServiceBusClientBuilder()
+                         .connectionString(connectionString)
+                         .receiver()
+                         .topicName(topicName)
+                         .subscriptionName(subscriptionName)
+                         .subQueue(SubQueue.DEAD_LETTER_QUEUE)
+                         .buildClient()) {
+                    
+                    while (true) {
+                        Iterable<ServiceBusReceivedMessage> receivedMessages = 
+                            dlqReceiver.receiveMessages(100, java.time.Duration.ofSeconds(5));
+                        
+                        boolean hasMessages = false;
+                        for (ServiceBusReceivedMessage message : receivedMessages) {
+                            hasMessages = true;
+                            dlqReceiver.complete(message);
+                            messagesDeleted++;
+                        }
+                        
+                        if (!hasMessages) {
+                            break;
+                        }
+                    }
+                }
+                
+                logMessage(String.format("Limpeza concluída: %d mensagens removidas da subscription '%s' do tópico '%s'", 
+                    messagesDeleted, subscriptionName, topicName));
+                return messagesDeleted;
+                
+            } catch (Exception e) {
+                logError(String.format("Erro ao limpar mensagens da subscription '%s' do tópico '%s'", 
+                    subscriptionName, topicName), e);
+                throw new RuntimeException("Erro ao limpar mensagens", e);
+            }
+        }, executorService);
     }
     
     /**

@@ -52,149 +52,371 @@
          <!-- Main Content -->
          <TabPane fx:id="mainTabPane" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
             
-            <!-- Filas Tab -->
-            <Tab fx:id="queuesTab" text="📋 Gerenciar Filas">
-               <ScrollPane fitToWidth="true">
-                  <VBox spacing="15.0">
+            <!-- ============================================ -->
+            <!-- FILAS - Tab Principal                         -->
+            <!-- ============================================ -->
+            <Tab fx:id="queuesMainTab" text="📋 FILAS" styleClass="queues-main-tab">
+               <VBox styleClass="queues-tab-content">
+                  <!-- Context Indicator -->
+                  <HBox alignment="CENTER_LEFT" styleClass="context-banner-queues">
                      <padding>
-                        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+                        <Insets bottom="10.0" left="20.0" right="20.0" top="10.0" />
                      </padding>
-                     
-                     <!-- Load Queues Section -->
-                     <VBox styleClass="section">
-                        <Label styleClass="section-title" text="📋 Lista de Filas">
-                           <font>
-                              <Font name="System Bold" size="14.0" />
-                           </font>
-                        </Label>
-                        <HBox alignment="CENTER_LEFT" spacing="10.0">
-                           <Button fx:id="loadQueuesButton" styleClass="primary-button" text="🔄 Carregar Filas" />
-                           <TextField fx:id="queueFilterField" promptText="🔍 Filtrar filas..." HBox.hgrow="ALWAYS" />
-                        </HBox>
-                     </VBox>
-                     
-                     <!-- Queues List and Details -->
-                     <HBox spacing="15.0" VBox.vgrow="ALWAYS">
-                        <!-- Queue List -->
-                        <VBox spacing="5.0" HBox.hgrow="SOMETIMES">
-                           <Label styleClass="subsection-title" text="Filas Disponíveis" />
-                           <ListView fx:id="queueListView" prefHeight="200.0" />
-                        </VBox>
-                        
-                        <!-- Queue Details -->
-                        <VBox spacing="5.0" HBox.hgrow="ALWAYS">
-                           <Label styleClass="subsection-title" text="Detalhes da Fila Selecionada" />
-                           <TableView fx:id="queueDetailsTable" prefHeight="200.0">
-                              <columns>
-                                 <TableColumn fx:id="queueNameColumn" prefWidth="120.0" text="Nome" />
-                                 <TableColumn fx:id="queueStatusColumn" prefWidth="80.0" text="Status" />
-                                 <TableColumn fx:id="totalMessagesColumn" prefWidth="80.0" text="Total Msgs" />
-                                 <TableColumn fx:id="activeMessagesColumn" prefWidth="80.0" text="Ativas" />
-                                 <TableColumn fx:id="deadLetterMessagesColumn" prefWidth="80.0" text="Mortas" />
-                                 <TableColumn fx:id="sizeColumn" prefWidth="80.0" text="Tamanho (KB)" />
-                                 <TableColumn fx:id="actionsColumn" prefWidth="100.0" text="Ações" sortable="false" />
-                              </columns>
-                           </TableView>
-                        </VBox>
-                     </HBox>
-                     
-                     <!-- Create Queue Section -->
-                     <VBox styleClass="action-section" spacing="5.0">
-                        <Label styleClass="subsection-title" text="➕ Criar Nova Fila" />
-                        <HBox spacing="10.0" alignment="CENTER_LEFT">
-                           <TextField fx:id="newQueueNameField" promptText="Nome da nova fila" HBox.hgrow="ALWAYS" />
-                           <Button fx:id="createQueueButton" styleClass="success-button" text="🚀 Criar Fila" />
-                        </HBox>
-                     </VBox>
-                  </VBox>
-               </ScrollPane>
-            </Tab>
-            
-            <!-- Messages Tab -->
-            <Tab fx:id="messagesTab" text="📥 Ver Mensagens">
-               <VBox spacing="15.0">
-                  <padding>
-                     <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
-                  </padding>
-                  
-                  <!-- Load Messages Section -->
-                  <HBox alignment="CENTER_LEFT" spacing="10.0">
-                     <Label text="Fila:" />
-                     <ComboBox fx:id="viewQueueComboBox" promptText="Digite para filtrar ou selecione uma fila" maxWidth="Infinity" HBox.hgrow="SOMETIMES" editable="true" />
-                     <Button fx:id="loadMessagesButton" styleClass="primary-button" text="👁️ Carregar Mensagens" />
+                     <Label styleClass="context-indicator" text="📋 Contexto: FILAS" />
                   </HBox>
                   
-                  <!-- Messages Table and Details -->
-                  <HBox spacing="15.0" VBox.vgrow="ALWAYS">
-                     <!-- Messages Table -->
-                     <VBox spacing="5.0" HBox.hgrow="ALWAYS">
-                        <Label styleClass="subsection-title" text="📬 Mensagens" />
-                        <TableView fx:id="messagesTable" prefHeight="300.0">
-                           <columns>
-                              <TableColumn fx:id="sequenceNumberColumn" prefWidth="100.0" text="Seq. Number" />
-                              <TableColumn fx:id="messageIdColumn" prefWidth="150.0" text="Message ID" />
-                              <TableColumn fx:id="messageBodyColumn" prefWidth="200.0" text="Corpo (Preview)" />
-                              <TableColumn fx:id="enqueuedTimeColumn" prefWidth="150.0" text="Data/Hora" />
-                              <TableColumn fx:id="messageActionsColumn" prefWidth="80.0" text="Ações" sortable="false" />
-                           </columns>
-                        </TableView>
-                     </VBox>
+                  <!-- Sub-Tabs para Filas -->
+                  <TabPane fx:id="queuesTabPane" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
                      
-                     <!-- Message Details -->
-                     <VBox spacing="5.0" HBox.hgrow="ALWAYS">
-                        <Label styleClass="subsection-title" text="🔍 Detalhes da Mensagem" />
-                        <TextArea fx:id="messageDetailsTextArea" editable="false" prefHeight="300.0" wrapText="true" />
-                     </VBox>
-                  </HBox>
+                     <!-- Sub-Tab: Gerenciar Filas -->
+                     <Tab fx:id="manageQueuesTab" text="📊 Gerenciar">
+                        <ScrollPane fitToWidth="true">
+                           <VBox spacing="15.0">
+                              <padding>
+                                 <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+                              </padding>
+                              
+                              <!-- Load Queues Section -->
+                              <VBox styleClass="section">
+                                 <Label styleClass="section-title" text="📋 Lista de Filas">
+                                    <font>
+                                       <Font name="System Bold" size="14.0" />
+                                    </font>
+                                 </Label>
+                                 <HBox alignment="CENTER_LEFT" spacing="10.0">
+                                    <Button fx:id="loadQueuesButton" styleClass="primary-button" text="🔄 Carregar Filas" />
+                                    <TextField fx:id="queueFilterField" promptText="🔍 Filtrar filas..." HBox.hgrow="ALWAYS" />
+                                 </HBox>
+                              </VBox>
+                              
+                              <!-- Queues List and Details -->
+                              <HBox spacing="15.0" VBox.vgrow="ALWAYS">
+                                 <!-- Queue List -->
+                                 <VBox spacing="5.0" HBox.hgrow="SOMETIMES">
+                                    <Label styleClass="subsection-title" text="Filas Disponíveis" />
+                                    <ListView fx:id="queueListView" prefHeight="200.0" />
+                                 </VBox>
+                                 
+                                 <!-- Queue Details -->
+                                 <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                    <Label styleClass="subsection-title" text="Detalhes da Fila Selecionada" />
+                                    <TableView fx:id="queueDetailsTable" prefHeight="200.0">
+                                       <columns>
+                                          <TableColumn fx:id="queueNameColumn" prefWidth="120.0" text="Nome" />
+                                          <TableColumn fx:id="queueStatusColumn" prefWidth="80.0" text="Status" />
+                                          <TableColumn fx:id="totalMessagesColumn" prefWidth="80.0" text="Total Msgs" />
+                                          <TableColumn fx:id="activeMessagesColumn" prefWidth="80.0" text="Ativas" />
+                                          <TableColumn fx:id="deadLetterMessagesColumn" prefWidth="80.0" text="Mortas" />
+                                          <TableColumn fx:id="sizeColumn" prefWidth="80.0" text="Tamanho (KB)" />
+                                          <TableColumn fx:id="actionsColumn" prefWidth="100.0" text="Ações" sortable="false" />
+                                       </columns>
+                                    </TableView>
+                                 </VBox>
+                              </HBox>
+                              
+                              <!-- Create Queue Section -->
+                              <VBox styleClass="action-section" spacing="5.0">
+                                 <Label styleClass="subsection-title" text="➕ Criar Nova Fila" />
+                                 <HBox spacing="10.0" alignment="CENTER_LEFT">
+                                    <TextField fx:id="newQueueNameField" promptText="Nome da nova fila" HBox.hgrow="ALWAYS" />
+                                    <Button fx:id="createQueueButton" styleClass="success-button" text="🚀 Criar Fila" />
+                                 </HBox>
+                              </VBox>
+                           </VBox>
+                        </ScrollPane>
+                     </Tab>
+                     
+                     <!-- Sub-Tab: Ver Mensagens de Filas -->
+                     <Tab fx:id="viewQueueMessagesTab" text="📥 Ver Mensagens">
+                        <VBox spacing="15.0">
+                           <padding>
+                              <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+                           </padding>
+                           
+                           <!-- Load Messages Section -->
+                           <HBox alignment="CENTER_LEFT" spacing="10.0">
+                              <Label text="Fila:" />
+                              <ComboBox fx:id="viewQueueComboBox" promptText="Digite para filtrar ou selecione uma fila" maxWidth="Infinity" HBox.hgrow="SOMETIMES" editable="true" />
+                              <Button fx:id="loadMessagesButton" styleClass="primary-button" text="👁️ Carregar Mensagens" />
+                           </HBox>
+                           
+                           <!-- Messages Table and Details -->
+                           <HBox spacing="15.0" VBox.vgrow="ALWAYS">
+                              <!-- Messages Table -->
+                              <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                 <Label styleClass="subsection-title" text="📬 Mensagens" />
+                                 <TableView fx:id="messagesTable" prefHeight="300.0">
+                                    <columns>
+                                       <TableColumn fx:id="sequenceNumberColumn" prefWidth="100.0" text="Seq. Number" />
+                                       <TableColumn fx:id="messageIdColumn" prefWidth="150.0" text="Message ID" />
+                                       <TableColumn fx:id="messageBodyColumn" prefWidth="200.0" text="Corpo (Preview)" />
+                                       <TableColumn fx:id="enqueuedTimeColumn" prefWidth="150.0" text="Data/Hora" />
+                                       <TableColumn fx:id="messageActionsColumn" prefWidth="80.0" text="Ações" sortable="false" />
+                                    </columns>
+                                 </TableView>
+                              </VBox>
+                              
+                              <!-- Message Details -->
+                              <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                 <Label styleClass="subsection-title" text="🔍 Detalhes da Mensagem" />
+                                 <TextArea fx:id="messageDetailsTextArea" editable="false" prefHeight="300.0" wrapText="true" />
+                              </VBox>
+                           </HBox>
+                        </VBox>
+                     </Tab>
+                     
+                     <!-- Sub-Tab: Enviar Mensagem para Fila -->
+                     <Tab fx:id="sendQueueMessageTab" text="📤 Enviar Mensagem">
+                        <VBox spacing="15.0">
+                           <padding>
+                              <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+                           </padding>
+                           
+                           <!-- Queue Selection -->
+                           <HBox alignment="CENTER_LEFT" spacing="10.0">
+                              <Label text="Fila de Destino:" />
+                              <ComboBox fx:id="sendQueueComboBox" promptText="Digite para filtrar ou selecione uma fila" maxWidth="Infinity" HBox.hgrow="SOMETIMES" editable="true" />
+                           </HBox>
+                           
+                           <!-- Message Body -->
+                           <VBox spacing="5.0">
+                              <Label styleClass="subsection-title" text="📝 Corpo da Mensagem" />
+                              <TextArea fx:id="messageBodyTextArea" prefRowCount="8" wrapText="true" />
+                           </VBox>
+                           
+                           <!-- Custom Properties -->
+                           <VBox styleClass="section" spacing="10.0">
+                              <Label styleClass="subsection-title" text="🏷️ Propriedades Customizadas (opcional)" />
+                              <HBox spacing="10.0">
+                                 <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                    <Label text="Propriedade 1:" />
+                                    <HBox spacing="5.0">
+                                       <TextField fx:id="property1KeyField" promptText="Chave" HBox.hgrow="ALWAYS" />
+                                       <TextField fx:id="property1ValueField" promptText="Valor" HBox.hgrow="ALWAYS" />
+                                    </HBox>
+                                 </VBox>
+                                 <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                    <Label text="Propriedade 2:" />
+                                    <HBox spacing="5.0">
+                                       <TextField fx:id="property2KeyField" promptText="Chave" HBox.hgrow="ALWAYS" />
+                                       <TextField fx:id="property2ValueField" promptText="Valor" HBox.hgrow="ALWAYS" />
+                                    </HBox>
+                                 </VBox>
+                              </HBox>
+                           </VBox>
+                           
+                           <!-- Send Button -->
+                           <HBox alignment="CENTER_LEFT">
+                              <Button fx:id="sendMessageButton" styleClass="primary-button" text="📤 Enviar Mensagem para Fila" />
+                           </HBox>
+                        </VBox>
+                     </Tab>
+                     
+                  </TabPane>
                </VBox>
             </Tab>
             
-            <!-- Send Message Tab -->
-            <Tab fx:id="sendMessageTab" text="📤 Enviar Mensagem">
-               <VBox spacing="15.0">
-                  <padding>
-                     <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
-                  </padding>
-                  
-                  <!-- Queue Selection -->
-                  <HBox alignment="CENTER_LEFT" spacing="10.0">
-                     <Label text="Fila de Destino:" />
-                     <ComboBox fx:id="sendQueueComboBox" promptText="Digite para filtrar ou selecione uma fila" maxWidth="Infinity" HBox.hgrow="SOMETIMES" editable="true" />
+            <!-- ============================================ -->
+            <!-- TÓPICOS - Tab Principal                       -->
+            <!-- ============================================ -->
+            <Tab fx:id="topicsMainTab" text="📊 TÓPICOS" styleClass="topics-main-tab">
+               <VBox styleClass="topics-tab-content">
+                  <!-- Context Indicator -->
+                  <HBox alignment="CENTER_LEFT" styleClass="context-banner-topics">
+                     <padding>
+                        <Insets bottom="10.0" left="20.0" right="20.0" top="10.0" />
+                     </padding>
+                     <Label styleClass="context-indicator" text="📊 Contexto: TÓPICOS" />
                   </HBox>
                   
-                  <!-- Message Body -->
-                  <VBox spacing="5.0">
-                     <Label fx:id="messageBodyLabel" styleClass="subsection-title" text="📝 Corpo da Mensagem" />
-                     <TextArea fx:id="messageBodyTextArea" prefRowCount="8" wrapText="true" />
-                  </VBox>
-                  
-                  <!-- Custom Properties -->
-                  <VBox styleClass="section" spacing="10.0">
-                     <Label styleClass="subsection-title" text="🏷️ Propriedades Customizadas (opcional)" />
-                     <HBox spacing="10.0">
-                        <VBox spacing="5.0" HBox.hgrow="ALWAYS">
-                           <Label text="Propriedade 1:" />
-                           <HBox spacing="5.0">
-                              <TextField fx:id="property1KeyField" promptText="Chave" HBox.hgrow="ALWAYS" />
-                              <TextField fx:id="property1ValueField" promptText="Valor" HBox.hgrow="ALWAYS" />
+                  <!-- Sub-Tabs para Tópicos -->
+                  <TabPane fx:id="topicsTabPane" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
+                     
+                     <!-- Sub-Tab: Gerenciar Tópicos -->
+                     <Tab fx:id="manageTopicsTab" text="📊 Gerenciar">
+                        <ScrollPane fitToWidth="true">
+                           <VBox spacing="15.0">
+                              <padding>
+                                 <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+                              </padding>
+                              
+                              <!-- Load Topics Section -->
+                              <VBox styleClass="section">
+                                 <Label styleClass="section-title" text="📊 Lista de Tópicos">
+                                    <font>
+                                       <Font name="System Bold" size="14.0" />
+                                    </font>
+                                 </Label>
+                                 <HBox alignment="CENTER_LEFT" spacing="10.0">
+                                    <Button fx:id="loadTopicsButton" styleClass="primary-button" text="🔄 Carregar Tópicos" />
+                                    <TextField fx:id="topicFilterField" promptText="🔍 Filtrar tópicos..." HBox.hgrow="ALWAYS" />
+                                 </HBox>
+                              </VBox>
+                              
+                              <!-- Topics List and Details -->
+                              <HBox spacing="15.0" VBox.vgrow="ALWAYS">
+                                 <!-- Topic List -->
+                                 <VBox spacing="5.0" HBox.hgrow="SOMETIMES">
+                                    <Label styleClass="subsection-title" text="Tópicos Disponíveis" />
+                                    <ListView fx:id="topicListView" prefHeight="150.0" />
+                                 </VBox>
+                                 
+                                 <!-- Topic Details -->
+                                 <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                    <Label styleClass="subsection-title" text="Detalhes do Tópico Selecionado" />
+                                    <TableView fx:id="topicDetailsTable" prefHeight="150.0">
+                                       <columns>
+                                          <TableColumn fx:id="topicNameColumn" prefWidth="120.0" text="Nome" />
+                                          <TableColumn fx:id="topicStatusColumn" prefWidth="80.0" text="Status" />
+                                          <TableColumn fx:id="topicSubscriptionCountColumn" prefWidth="100.0" text="Subscriptions" />
+                                          <TableColumn fx:id="topicSizeColumn" prefWidth="100.0" text="Tamanho (KB)" />
+                                          <TableColumn fx:id="topicActionsColumn" prefWidth="100.0" text="Ações" sortable="false" />
+                                       </columns>
+                                    </TableView>
+                                 </VBox>
+                              </HBox>
+                              
+                              <!-- Subscriptions Section -->
+                              <VBox spacing="10.0" styleClass="section">
+                                 <Label styleClass="section-title" text="📧 Subscriptions do Tópico Selecionado">
+                                    <font>
+                                       <Font name="System Bold" size="14.0" />
+                                    </font>
+                                 </Label>
+                                 <HBox spacing="10.0" alignment="CENTER_LEFT">
+                                    <Label fx:id="selectedTopicLabel" text="Nenhum tópico selecionado" styleClass="info-label" />
+                                    <Region HBox.hgrow="ALWAYS" />
+                                    <Button fx:id="loadSubscriptionsButton" styleClass="primary-button" text="🔄 Carregar Subscriptions" disable="true" />
+                                 </HBox>
+                                 
+                                 <TableView fx:id="subscriptionsTable" prefHeight="150.0">
+                                    <columns>
+                                       <TableColumn fx:id="subscriptionNameColumn" prefWidth="150.0" text="Nome" />
+                                       <TableColumn fx:id="subscriptionStatusColumn" prefWidth="80.0" text="Status" />
+                                       <TableColumn fx:id="subscriptionTotalMessagesColumn" prefWidth="80.0" text="Total Msgs" />
+                                       <TableColumn fx:id="subscriptionActiveMessagesColumn" prefWidth="80.0" text="Ativas" />
+                                       <TableColumn fx:id="subscriptionDeadLetterMessagesColumn" prefWidth="80.0" text="Mortas" />
+                                       <TableColumn fx:id="subscriptionActionsColumn" prefWidth="150.0" text="Ações" sortable="false" />
+                                    </columns>
+                                 </TableView>
+                              </VBox>
+                              
+                              <!-- Create Topic/Subscription Section -->
+                              <HBox spacing="15.0">
+                                 <!-- Create Topic -->
+                                 <VBox styleClass="action-section" spacing="5.0" HBox.hgrow="ALWAYS">
+                                    <Label styleClass="subsection-title" text="➕ Criar Novo Tópico" />
+                                    <HBox spacing="10.0" alignment="CENTER_LEFT">
+                                       <TextField fx:id="newTopicNameField" promptText="Nome do novo tópico" HBox.hgrow="ALWAYS" />
+                                       <Button fx:id="createTopicButton" styleClass="success-button" text="🚀 Criar Tópico" />
+                                    </HBox>
+                                 </VBox>
+                                 
+                                 <!-- Create Subscription -->
+                                 <VBox styleClass="action-section" spacing="5.0" HBox.hgrow="ALWAYS">
+                                    <Label styleClass="subsection-title" text="➕ Criar Nova Subscription" />
+                                    <HBox spacing="10.0" alignment="CENTER_LEFT">
+                                       <TextField fx:id="newSubscriptionNameField" promptText="Nome da nova subscription" HBox.hgrow="ALWAYS" disable="true" />
+                                       <Button fx:id="createSubscriptionButton" styleClass="success-button" text="🚀 Criar Subscription" disable="true" />
+                                    </HBox>
+                                 </VBox>
+                              </HBox>
+                           </VBox>
+                        </ScrollPane>
+                     </Tab>
+                     
+                     <!-- Sub-Tab: Ver Mensagens de Subscriptions -->
+                     <Tab fx:id="viewTopicMessagesTab" text="📥 Ver Mensagens">
+                        <VBox spacing="15.0">
+                           <padding>
+                              <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+                           </padding>
+                           
+                           <!-- Topic and Subscription Selection -->
+                           <HBox alignment="CENTER_LEFT" spacing="10.0">
+                              <Label text="Tópico:" />
+                              <ComboBox fx:id="viewTopicComboBox" promptText="Selecione um tópico" HBox.hgrow="SOMETIMES" editable="true" />
+                              <Label text="Subscription:" />
+                              <ComboBox fx:id="viewSubscriptionComboBox" promptText="Selecione uma subscription" HBox.hgrow="SOMETIMES" editable="true" />
+                              <Button fx:id="loadTopicMessagesButton" styleClass="primary-button" text="👁️ Carregar Mensagens" />
+                           </HBox>
+                           
+                           <!-- Messages Table and Details -->
+                           <HBox spacing="15.0" VBox.vgrow="ALWAYS">
+                              <!-- Messages Table -->
+                              <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                 <Label styleClass="subsection-title" text="📬 Mensagens da Subscription" />
+                                 <TableView fx:id="topicMessagesTable" prefHeight="300.0">
+                                    <columns>
+                                       <TableColumn fx:id="topicSequenceNumberColumn" prefWidth="100.0" text="Seq. Number" />
+                                       <TableColumn fx:id="topicMessageIdColumn" prefWidth="150.0" text="Message ID" />
+                                       <TableColumn fx:id="topicMessageBodyColumn" prefWidth="200.0" text="Corpo (Preview)" />
+                                       <TableColumn fx:id="topicEnqueuedTimeColumn" prefWidth="150.0" text="Data/Hora" />
+                                       <TableColumn fx:id="topicMessageActionsColumn" prefWidth="80.0" text="Ações" sortable="false" />
+                                    </columns>
+                                 </TableView>
+                              </VBox>
+                              
+                              <!-- Message Details -->
+                              <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                 <Label styleClass="subsection-title" text="🔍 Detalhes da Mensagem" />
+                                 <TextArea fx:id="topicMessageDetailsTextArea" editable="false" prefHeight="300.0" wrapText="true" />
+                              </VBox>
                            </HBox>
                         </VBox>
-                        <VBox spacing="5.0" HBox.hgrow="ALWAYS">
-                           <Label text="Propriedade 2:" />
-                           <HBox spacing="5.0">
-                              <TextField fx:id="property2KeyField" promptText="Chave" HBox.hgrow="ALWAYS" />
-                              <TextField fx:id="property2ValueField" promptText="Valor" HBox.hgrow="ALWAYS" />
+                     </Tab>
+                     
+                     <!-- Sub-Tab: Enviar Mensagem para Tópico -->
+                     <Tab fx:id="sendTopicMessageTab" text="� Enviar Mensagem">
+                        <VBox spacing="15.0">
+                           <padding>
+                              <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+                           </padding>
+                           
+                           <!-- Topic Selection -->
+                           <HBox alignment="CENTER_LEFT" spacing="10.0">
+                              <Label text="Tópico de Destino:" />
+                              <ComboBox fx:id="sendTopicComboBox" promptText="Digite para filtrar ou selecione um tópico" maxWidth="Infinity" HBox.hgrow="SOMETIMES" editable="true" />
+                           </HBox>
+                           
+                           <!-- Message Body -->
+                           <VBox spacing="5.0">
+                              <Label styleClass="subsection-title" text="📝 Corpo da Mensagem" />
+                              <TextArea fx:id="sendTopicMessageBodyTextArea" prefRowCount="8" wrapText="true" />
+                           </VBox>
+                           
+                           <!-- Custom Properties -->
+                           <VBox styleClass="section" spacing="10.0">
+                              <Label styleClass="subsection-title" text="🏷️ Propriedades Customizadas (opcional)" />
+                              <HBox spacing="10.0">
+                                 <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                    <Label text="Propriedade 1:" />
+                                    <HBox spacing="5.0">
+                                       <TextField fx:id="sendTopicProperty1KeyField" promptText="Chave" HBox.hgrow="ALWAYS" />
+                                       <TextField fx:id="sendTopicProperty1ValueField" promptText="Valor" HBox.hgrow="ALWAYS" />
+                                    </HBox>
+                                 </VBox>
+                                 <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                    <Label text="Propriedade 2:" />
+                                    <HBox spacing="5.0">
+                                       <TextField fx:id="sendTopicProperty2KeyField" promptText="Chave" HBox.hgrow="ALWAYS" />
+                                       <TextField fx:id="sendTopicProperty2ValueField" promptText="Valor" HBox.hgrow="ALWAYS" />
+                                    </HBox>
+                                 </VBox>
+                              </HBox>
+                           </VBox>
+                           
+                           <!-- Send Button -->
+                           <HBox alignment="CENTER_LEFT">
+                              <Button fx:id="sendToTopicButton" styleClass="primary-button" text="📤 Publicar no Tópico" />
                            </HBox>
                         </VBox>
-                     </HBox>
-                  </VBox>
-                  
-                  <!-- Send Button -->
-                  <HBox alignment="CENTER_LEFT">
-                     <Button fx:id="sendMessageButton" styleClass="primary-button" text="📤 Enviar Mensagem" />
-                  </HBox>
+                     </Tab>
+                     
+                  </TabPane>
                </VBox>
             </Tab>
+            
          </TabPane>
       </VBox>
    </center>

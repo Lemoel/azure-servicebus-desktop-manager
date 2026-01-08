@@ -477,3 +477,48 @@
 .dark-theme .subsection-title:hover {
     -fx-text-fill: #4fc3f7;
 }
+
+/* ===== CONTEXTO DE FILAS VS TÓPICOS ===== */
+.queues-tab-content {
+    -fx-background-color: #e3f2fd; /* Azul claro */
+}
+
+.topics-tab-content {
+    -fx-background-color: #fff3e0; /* Laranja claro */
+}
+
+.context-banner-queues {
+    -fx-background-color: linear-gradient(to right, #2196f3, #64b5f6);
+    -fx-border-color: #1976d2;
+    -fx-border-width: 0 0 2 0;
+}
+
+.context-banner-topics {
+    -fx-background-color: linear-gradient(to right, #ff9800, #ffb74d);
+    -fx-border-color: #f57c00;
+    -fx-border-width: 0 0 2 0;
+}
+
+.context-banner-queues .context-indicator,
+.context-banner-topics .context-indicator {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+/* Tabs principais com cores específicas */
+.queues-main-tab .tab-label {
+    -fx-text-fill: #1976d2;
+}
+
+.topics-main-tab .tab-label {
+    -fx-text-fill: #f57c00;
+}
+
+.queues-main-tab:selected {
+    -fx-border-color: #2196f3;
+}
+
+.topics-main-tab:selected {
+    -fx-border-color: #ff9800;
+}
