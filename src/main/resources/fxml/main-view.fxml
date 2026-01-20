@@ -108,6 +108,8 @@
                                           <TableColumn fx:id="activeMessagesColumn" prefWidth="80.0" text="Ativas" />
                                           <TableColumn fx:id="deadLetterMessagesColumn" prefWidth="80.0" text="Mortas" />
                                           <TableColumn fx:id="sizeColumn" prefWidth="80.0" text="Tamanho (KB)" />
+                                          <TableColumn fx:id="lockDurationColumn" prefWidth="100.0" text="Lock Duration" />
+                                          <TableColumn fx:id="maxDeliveryCountColumn" prefWidth="100.0" text="Max Delivery" />
                                           <TableColumn fx:id="actionsColumn" prefWidth="100.0" text="Ações" sortable="false" />
                                        </columns>
                                     </TableView>

@@ -65,6 +65,8 @@ public class MainController implements Initializable {
     @FXML private TableColumn<QueueInfo, Long> activeMessagesColumn;
     @FXML private TableColumn<QueueInfo, Long> deadLetterMessagesColumn;
     @FXML private TableColumn<QueueInfo, Double> sizeColumn;
+    @FXML private TableColumn<QueueInfo, String> lockDurationColumn;
+    @FXML private TableColumn<QueueInfo, Integer> maxDeliveryCountColumn;
     @FXML private TableColumn<QueueInfo, Void> actionsColumn;
     
     @FXML private TextField newQueueNameField;
@@ -243,6 +245,8 @@ public class MainController implements Initializable {
         activeMessagesColumn.setCellValueFactory(new PropertyValueFactory<>("activeMessages"));
         deadLetterMessagesColumn.setCellValueFactory(new PropertyValueFactory<>("deadLetterMessages"));
         sizeColumn.setCellValueFactory(new PropertyValueFactory<>("sizeInKB"));
+        lockDurationColumn.setCellValueFactory(new PropertyValueFactory<>("lockDuration"));
+        maxDeliveryCountColumn.setCellValueFactory(new PropertyValueFactory<>("maxDeliveryCount"));
         
         // Configurar coluna de ações
         setupActionsColumn();
