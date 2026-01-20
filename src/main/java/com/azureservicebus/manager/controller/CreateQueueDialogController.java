@@ -108,6 +108,13 @@ public class CreateQueueDialogController implements Initializable {
             duplicateDetectionSection.setManaged(newVal);
             duplicateDetectionSeparator.setVisible(newVal);
             duplicateDetectionSeparator.setManaged(newVal);
+            
+            // Redimensionar o diálogo para acomodar o conteúdo
+            if (dialogPane != null && dialogPane.getScene() != null && dialogPane.getScene().getWindow() != null) {
+                javafx.application.Platform.runLater(() -> {
+                    dialogPane.getScene().getWindow().sizeToScene();
+                });
+            }
         });
     }
     

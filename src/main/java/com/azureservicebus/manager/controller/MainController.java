@@ -1105,6 +1105,7 @@ public class MainController implements Initializable {
             Dialog<ButtonType> dialog = new Dialog<>();
             dialog.setDialogPane(dialogPane);
             dialog.setTitle("Configurar Nova Fila");
+            dialog.setResizable(true); // Permitir redimensionamento pelo mouse
             
             // Customizar textos dos botões
             Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
