@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<DialogPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.azureservicebus.manager.controller.CreateSubscriptionDialogController"
+            prefWidth="600" prefHeight="500">
+    
+    <content>
+        <VBox spacing="15" styleClass="dialog-container">
+            <padding>
+                <Insets top="20" right="20" bottom="20" left="20"/>
+            </padding>
+            
+            <!-- Título -->
+            <Label text="➕ Criar Nova Subscription" styleClass="dialog-title">
+                <font>
+                    <Font name="System Bold" size="16"/>
+                </font>
+            </Label>
+            
+            <Separator/>
+            
+            <!-- Nome da Subscription -->
+            <VBox spacing="5">
+                <Label text="Nome da Subscription:" styleClass="field-label">
+                    <font>
+                        <Font name="System Bold" size="12"/>
+                    </font>
+                </Label>
+                <TextField fx:id="subscriptionNameField" promptText="Digite o nome da subscription..."/>
+            </VBox>
+            
+            <!-- CheckBox para habilitar filtro -->
+            <CheckBox fx:id="enableFilterCheckBox" text="☑ Configurar filtro para mensagens">
+                <font>
+                    <Font name="System Bold" size="12"/>
+                </font>
+            </CheckBox>
+            
+            <!-- Seção de configuração de filtro (visível apenas quando checkbox marcada) -->
+            <VBox fx:id="filterSection" spacing="15" visible="false" managed="false" 
+                  style="-fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-color: #f9f9f9; -fx-background-radius: 5;">
+                <padding>
+                    <Insets top="15" right="15" bottom="15" left="15"/>
+                </padding>
+                
+                <Label text="Configuração do Filtro" styleClass="section-title">
+                    <font>
+                        <Font name="System Bold" size="13"/>
+                    </font>
+                </Label>
+                
+                <!-- Tipo de filtro -->
+                <VBox spacing="5">
+                    <Label text="Tipo de Filtro:" styleClass="field-label"/>
+                    <ComboBox fx:id="filterTypeComboBox" prefWidth="200" promptText="Selecione o tipo..."/>
+                </VBox>
+                
+                <!-- SQL Filter Section -->
+                <VBox fx:id="sqlFilterSection" spacing="5" visible="false" managed="false">
+                    <Label text="Expressão SQL:" styleClass="field-label"/>
+                    <TextArea fx:id="sqlExpressionTextArea" prefHeight="80" wrapText="true"
+                              promptText="Exemplo: type = 'order' AND priority > 5"/>
+                    <Label text="💡 Filtra mensagens com base em propriedades e corpo" 
+                           style="-fx-text-fill: #666; -fx-font-size: 10px;"/>
+                </VBox>
+                
+                <!-- Correlation Filter Section -->
+                <VBox fx:id="correlationFilterSection" spacing="10" visible="false" managed="false">
+                    <Label text="Propriedades do Correlation Filter:" styleClass="field-label"/>
+                    
+                    <GridPane hgap="10" vgap="8">
+                        <columnConstraints>
+                            <ColumnConstraints percentWidth="50"/>
+                            <ColumnConstraints percentWidth="50"/>
+                        </columnConstraints>
+                        
+                        <!-- Linha 1 -->
+                        <VBox spacing="3" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                            <Label text="Correlation ID:" style="-fx-font-size: 11px;"/>
+                            <TextField fx:id="correlationIdField" promptText="ID de correlação"/>
+                        </VBox>
+                        
+                        <VBox spacing="3" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                            <Label text="Message ID:" style="-fx-font-size: 11px;"/>
+                            <TextField fx:id="messageIdField" promptText="ID da mensagem"/>
+                        </VBox>
+                        
+                        <!-- Linha 2 -->
+                        <VBox spacing="3" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                            <Label text="Session ID:" style="-fx-font-size: 11px;"/>
+                            <TextField fx:id="sessionIdField" promptText="ID da sessão"/>
+                        </VBox>
+                        
+                        <VBox spacing="3" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                            <Label text="Reply To:" style="-fx-font-size: 11px;"/>
+                            <TextField fx:id="replyToField" promptText="Endereço de resposta"/>
+                        </VBox>
+                        
+                        <!-- Linha 3 -->
+                        <VBox spacing="3" GridPane.columnIndex="0" GridPane.rowIndex="2">
+                            <Label text="Label:" style="-fx-font-size: 11px;"/>
+                            <TextField fx:id="labelField" promptText="Rótulo da mensagem"/>
+                        </VBox>
+                        
+                        <VBox spacing="3" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                            <Label text="Content Type:" style="-fx-font-size: 11px;"/>
+                            <TextField fx:id="contentTypeField" promptText="application/json"/>
+                        </VBox>
+                    </GridPane>
+                    
+                    <Label text="💡 Filtra mensagens com base em propriedades do cabeçalho" 
+                           style="-fx-text-fill: #666; -fx-font-size: 10px;"/>
+                </VBox>
+            </VBox>
+            
+            <!-- Nota informativa -->
+            <HBox spacing="5" alignment="CENTER_LEFT" 
+                  style="-fx-background-color: #fff3cd; -fx-padding: 10; -fx-border-color: #ffc107; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-radius: 5;">
+                <Label text="⚠" style="-fx-font-size: 16px;"/>
+                <VBox spacing="3">
+                    <Label text="Informação importante:" style="-fx-font-weight: bold; -fx-font-size: 11px;"/>
+                    <Label fx:id="infoLabel" text="Subscription será criada com rule padrão '$Default' (aceita todas as mensagens)" 
+                           wrapText="true" style="-fx-font-size: 10px;"/>
+                </VBox>
+            </HBox>
+        </VBox>
+    </content>
+    
+    <buttonTypes>
+        <ButtonType fx:constant="OK"/>
+        <ButtonType fx:constant="CANCEL"/>
+    </buttonTypes>
+    
+</DialogPane>

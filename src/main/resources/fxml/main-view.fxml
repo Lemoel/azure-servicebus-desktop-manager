@@ -90,17 +90,17 @@
                               </VBox>
                               
                               <!-- Queues List and Details -->
-                              <HBox spacing="15.0" VBox.vgrow="ALWAYS">
+                              <SplitPane dividerPositions="0.25" VBox.vgrow="ALWAYS">
                                  <!-- Queue List -->
-                                 <VBox spacing="5.0" HBox.hgrow="SOMETIMES">
+                                 <VBox spacing="5.0" minWidth="200.0" prefWidth="250.0">
                                     <Label styleClass="subsection-title" text="Filas Disponíveis" />
-                                    <ListView fx:id="queueListView" prefHeight="200.0" />
+                                    <ListView fx:id="queueListView" prefHeight="200.0" VBox.vgrow="ALWAYS" />
                                  </VBox>
                                  
                                  <!-- Queue Details -->
-                                 <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                 <VBox spacing="5.0">
                                     <Label styleClass="subsection-title" text="Detalhes da Fila Selecionada" />
-                                    <TableView fx:id="queueDetailsTable" prefHeight="200.0">
+                                    <TableView fx:id="queueDetailsTable" prefHeight="200.0" VBox.vgrow="ALWAYS">
                                        <columns>
                                           <TableColumn fx:id="queueNameColumn" prefWidth="120.0" text="Nome" />
                                           <TableColumn fx:id="queueStatusColumn" prefWidth="80.0" text="Status" />
@@ -121,7 +121,7 @@
                                        </columns>
                                     </TableView>
                                  </VBox>
-                              </HBox>
+                              </SplitPane>
                               
                               <!-- Create Queue Section -->
                               <VBox styleClass="action-section" spacing="5.0">
@@ -265,17 +265,17 @@
                               </VBox>
                               
                               <!-- Topics List and Details -->
-                              <HBox spacing="15.0" VBox.vgrow="ALWAYS">
+                              <SplitPane dividerPositions="0.25" VBox.vgrow="ALWAYS">
                                  <!-- Topic List -->
-                                 <VBox spacing="5.0" HBox.hgrow="SOMETIMES">
+                                 <VBox spacing="5.0" minWidth="200.0" prefWidth="250.0">
                                     <Label styleClass="subsection-title" text="Tópicos Disponíveis" />
-                                    <ListView fx:id="topicListView" prefHeight="150.0" />
+                                    <ListView fx:id="topicListView" prefHeight="150.0" VBox.vgrow="ALWAYS" />
                                  </VBox>
                                  
                                  <!-- Topic Details -->
-                                 <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                 <VBox spacing="5.0">
                                     <Label styleClass="subsection-title" text="Detalhes do Tópico Selecionado" />
-                                    <TableView fx:id="topicDetailsTable" prefHeight="150.0">
+                                    <TableView fx:id="topicDetailsTable" prefHeight="150.0" VBox.vgrow="ALWAYS">
                                        <columns>
                                           <TableColumn fx:id="topicNameColumn" prefWidth="120.0" text="Nome" />
                                           <TableColumn fx:id="topicStatusColumn" prefWidth="80.0" text="Status" />
@@ -285,7 +285,7 @@
                                        </columns>
                                     </TableView>
                                  </VBox>
-                              </HBox>
+                              </SplitPane>
                               
                               <!-- Subscriptions Section -->
                               <VBox spacing="10.0" styleClass="section">
@@ -326,10 +326,12 @@
                                  <!-- Create Subscription -->
                                  <VBox styleClass="action-section" spacing="5.0" HBox.hgrow="ALWAYS">
                                     <Label styleClass="subsection-title" text="➕ Criar Nova Subscription" />
+                                    <TextField fx:id="newSubscriptionNameField" promptText="Nome da nova subscription" disable="true" />
                                     <HBox spacing="10.0" alignment="CENTER_LEFT">
-                                       <TextField fx:id="newSubscriptionNameField" promptText="Nome da nova subscription" HBox.hgrow="ALWAYS" disable="true" />
-                                       <Button fx:id="createSubscriptionButton" styleClass="success-button" text="🚀 Criar Subscription" disable="true" />
+                                       <Button fx:id="createSubscriptionButton" styleClass="success-button" text="🚀 Criar Simples (Padrão)" disable="true" />
+                                       <Button fx:id="createAdvancedSubscriptionButton" styleClass="primary-button" text="⚙️ Criar com Configurações" disable="true" />
                                     </HBox>
+                                    <Label styleClass="help-text" text="💡 Use 'Criar com Configurações' para definir filtro de mensagens" />
                                  </VBox>
                               </HBox>
                            </VBox>

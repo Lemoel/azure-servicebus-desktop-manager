@@ -107,6 +107,7 @@ public class MainController implements Initializable {
     
     @FXML private TextField newSubscriptionNameField;
     @FXML private Button createSubscriptionButton;
+    @FXML private Button createAdvancedSubscriptionButton;
     
     // Aba de Mensagens
     @FXML private ComboBox<String> viewQueueComboBox;
@@ -773,6 +774,11 @@ public class MainController implements Initializable {
         // Subscriptions
         loadSubscriptionsButton.setOnAction(e -> handleLoadSubscriptions());
         createSubscriptionButton.setOnAction(e -> handleCreateSubscription());
+        
+        // Criar subscription avançada - se o botão existir
+        if (createAdvancedSubscriptionButton != null) {
+            createAdvancedSubscriptionButton.setOnAction(e -> handleCreateAdvancedSubscription());
+        }
         
         // Ver Mensagens de Tópicos
         loadTopicMessagesButton.setOnAction(e -> handleLoadTopicMessages());
@@ -1558,6 +1564,9 @@ public class MainController implements Initializable {
         loadSubscriptionsButton.setDisable(false);
         newSubscriptionNameField.setDisable(false);
         createSubscriptionButton.setDisable(false);
+        if (createAdvancedSubscriptionButton != null) {
+            createAdvancedSubscriptionButton.setDisable(false);
+        }
         
         // Carregar detalhes do tópico
         Task<TopicInfo> detailsTask = new Task<TopicInfo>() {
@@ -1793,6 +1802,186 @@ public class MainController implements Initializable {
             protected void failed() {
                 Platform.runLater(() -> {
                     createSubscriptionButton.setDisable(false);
+                    showAlert("Erro", "Erro ao criar subscription: " + getException().getMessage(), Alert.AlertType.ERROR);
+                });
+            }
+        };
+        
+        new Thread(createTask).start();
+    }
+    
+    /**
+     * Abre diálogo para criação de subscription com filtro customizado
+     */
+    private void handleCreateAdvancedSubscription() {
+        if (selectedTopicName == null) {
+            showAlert("Erro", "Selecione um tópico primeiro", Alert.AlertType.ERROR);
+            return;
+        }
+        
+        try {
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                getClass().getResource("/fxml/create-subscription-dialog.fxml")
+            );
+            
+            DialogPane dialogPane = loader.load();
+            CreateSubscriptionDialogController dialogController = loader.getController();
+            
+            // Pré-preencher com o nome digitado, se houver
+            String initialName = newSubscriptionNameField.getText().trim();
+            if (!initialName.isEmpty()) {
+                dialogController.setInitialSubscriptionName(initialName);
+            }
+            
+            // Configurar tópico
+            dialogController.setTopicName(selectedTopicName);
+            
+            // Criar o diálogo
+            Dialog<ButtonType> dialog = new Dialog<>();
+            dialog.setDialogPane(dialogPane);
+            dialog.setTitle("Criar Subscription com Filtro - " + selectedTopicName);
+            dialog.setResizable(true);
+            
+            // Configurar o controller com o dialogPane
+            dialogController.setDialogPane(dialogPane);
+            
+            // Exibir diálogo e processar resultado
+            Optional<ButtonType> result = dialog.showAndWait();
+            
+            if (result.isPresent() && result.get() == ButtonType.OK) {
+                String subscriptionName = dialogController.getSubscriptionName();
+                boolean filterEnabled = dialogController.isFilterEnabled();
+                
+                if (!filterEnabled) {
+                    // Criar subscription normal
+                    createSimpleSubscription(subscriptionName);
+                } else {
+                    // Criar subscription com filtro
+                    String filterType = dialogController.getFilterType();
+                    
+                    createAdvancedSubscriptionButton.setDisable(true);
+                    
+                    Task<CreateQueueResult> createTask = new Task<CreateQueueResult>() {
+                        @Override
+                        protected CreateQueueResult call() throws Exception {
+                            if (filterType.equals("SQL Filter")) {
+                                String sqlExpression = dialogController.getSqlExpression();
+                                return serviceBusService.createSubscriptionWithRuleAsync(
+                                    selectedTopicName, 
+                                    subscriptionName, 
+                                    "$Default",
+                                    "SQL Filter",
+                                    sqlExpression,
+                                    null, null, null, null, null, null
+                                ).get();
+                            } else {
+                                // Correlation Filter
+                                String correlationId = dialogController.getCorrelationId();
+                                String messageId = dialogController.getMessageId();
+                                String sessionId = dialogController.getSessionId();
+                                String replyTo = dialogController.getReplyTo();
+                                String label = dialogController.getLabel();
+                                String contentType = dialogController.getContentType();
+                                
+                                return serviceBusService.createSubscriptionWithRuleAsync(
+                                    selectedTopicName, 
+                                    subscriptionName, 
+                                    "$Default",
+                                    "Correlation Filter",
+                                    null,
+                                    correlationId.isEmpty() ? null : correlationId,
+                                    messageId.isEmpty() ? null : messageId,
+                                    sessionId.isEmpty() ? null : sessionId,
+                                    replyTo.isEmpty() ? null : replyTo,
+                                    label.isEmpty() ? null : label,
+                                    contentType.isEmpty() ? null : contentType
+                                ).get();
+                            }
+                        }
+                        
+                        @Override
+                        protected void succeeded() {
+                            Platform.runLater(() -> {
+                                createAdvancedSubscriptionButton.setDisable(false);
+                                newSubscriptionNameField.clear();
+                                
+                                CreateQueueResult createResult = getValue();
+                                switch (createResult) {
+                                    case CREATED:
+                                        addLogMessage(String.format("Subscription '%s' criada com filtro customizado!", subscriptionName));
+                                        showAlert("Sucesso", 
+                                            String.format("Subscription '%s' foi criada com sucesso!\n\nFiltro aplicado: %s", 
+                                                subscriptionName, filterType), 
+                                            Alert.AlertType.INFORMATION);
+                                        handleLoadSubscriptions();
+                                        break;
+                                        
+                                    case ALREADY_EXISTS:
+                                        addLogMessage(String.format("Subscription '%s' já existe", subscriptionName));
+                                        showAlert("Informação", 
+                                            String.format("A subscription '%s' já existe.", subscriptionName), 
+                                            Alert.AlertType.WARNING);
+                                        handleLoadSubscriptions();
+                                        break;
+                                        
+                                    case ERROR:
+                                        showAlert("Erro", 
+                                            String.format("Erro ao criar subscription '%s'.", subscriptionName), 
+                                            Alert.AlertType.ERROR);
+                                        break;
+                                }
+                            });
+                        }
+                        
+                        @Override
+                        protected void failed() {
+                            Platform.runLater(() -> {
+                                createAdvancedSubscriptionButton.setDisable(false);
+                                showAlert("Erro", "Erro ao criar subscription: " + getException().getMessage(), Alert.AlertType.ERROR);
+                            });
+                        }
+                    };
+                    
+                    new Thread(createTask).start();
+                }
+            }
+            
+        } catch (Exception e) {
+            logger.error("Erro ao abrir diálogo de criação avançada de subscription", e);
+            showAlert("Erro", "Erro ao abrir diálogo: " + e.getMessage(), Alert.AlertType.ERROR);
+        }
+    }
+    
+    private void createSimpleSubscription(String subscriptionName) {
+        createAdvancedSubscriptionButton.setDisable(true);
+        
+        Task<CreateQueueResult> createTask = new Task<CreateQueueResult>() {
+            @Override
+            protected CreateQueueResult call() throws Exception {
+                return serviceBusService.createSubscriptionAsync(selectedTopicName, subscriptionName).get();
+            }
+            
+            @Override
+            protected void succeeded() {
+                Platform.runLater(() -> {
+                    createAdvancedSubscriptionButton.setDisable(false);
+                    newSubscriptionNameField.clear();
+                    
+                    CreateQueueResult result = getValue();
+                    if (result == CreateQueueResult.CREATED) {
+                        addLogMessage(String.format("Subscription '%s' criada com sucesso!", subscriptionName));
+                        showAlert("Sucesso", 
+                            String.format("Subscription '%s' foi criada com sucesso!", subscriptionName), 
+                            Alert.AlertType.INFORMATION);
+                        handleLoadSubscriptions();
+                    }
+                });
+            }
+            
+            @Override
+            protected void failed() {
+                Platform.runLater(() -> {
+                    createAdvancedSubscriptionButton.setDisable(false);
                     showAlert("Erro", "Erro ao criar subscription: " + getException().getMessage(), Alert.AlertType.ERROR);
                 });
             }
