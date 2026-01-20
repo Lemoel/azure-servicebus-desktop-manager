@@ -18,6 +18,8 @@ public class QueueConfiguration {
     private boolean batchedOperationsEnabled;
     private boolean requiresSession;
     private boolean partitioningEnabled;
+    private boolean duplicateDetectionEnabled;
+    private Duration duplicateDetectionHistoryTimeWindow;
     private long maxSizeInMB;
     private Duration defaultMessageTimeToLive;
     
@@ -32,6 +34,8 @@ public class QueueConfiguration {
         this.batchedOperationsEnabled = true;
         this.requiresSession = false;
         this.partitioningEnabled = false;
+        this.duplicateDetectionEnabled = false;
+        this.duplicateDetectionHistoryTimeWindow = Duration.ofMinutes(10); // Padrão: 10 minutos
         this.maxSizeInMB = 1024;
         this.defaultMessageTimeToLive = Duration.ofHours(336); // 14 dias
     }
@@ -116,6 +120,33 @@ public class QueueConfiguration {
         this.partitioningEnabled = partitioningEnabled;
     }
     
+    public boolean isDuplicateDetectionEnabled() {
+        return duplicateDetectionEnabled;
+    }
+    
+    public void setDuplicateDetectionEnabled(boolean duplicateDetectionEnabled) {
+        this.duplicateDetectionEnabled = duplicateDetectionEnabled;
+    }
+    
+    public Duration getDuplicateDetectionHistoryTimeWindow() {
+        return duplicateDetectionHistoryTimeWindow;
+    }
+    
+    public void setDuplicateDetectionHistoryTimeWindow(Duration duplicateDetectionHistoryTimeWindow) {
+        this.duplicateDetectionHistoryTimeWindow = duplicateDetectionHistoryTimeWindow;
+    }
+    
+    public void setDuplicateDetectionHistoryTimeWindowMinutes(int minutes) {
+        if (minutes < 1 || minutes > 10080) {
+            throw new IllegalArgumentException("Duplicate Detection Window deve estar entre 1 minuto e 10080 minutos (7 dias)");
+        }
+        this.duplicateDetectionHistoryTimeWindow = Duration.ofMinutes(minutes);
+    }
+    
+    public int getDuplicateDetectionHistoryTimeWindowMinutes() {
+        return (int) duplicateDetectionHistoryTimeWindow.toMinutes();
+    }
+    
     public long getMaxSizeInMB() {
         return maxSizeInMB;
     }
@@ -185,6 +216,8 @@ public class QueueConfiguration {
                 ", batchedOperations=" + batchedOperationsEnabled +
                 ", requiresSession=" + requiresSession +
                 ", partitioning=" + partitioningEnabled +
+                ", duplicateDetection=" + duplicateDetectionEnabled +
+                ", duplicateDetectionWindow=" + (duplicateDetectionEnabled ? duplicateDetectionHistoryTimeWindow.toMinutes() + " min" : "N/A") +
                 ", maxSize=" + maxSizeInMB + " MB" +
                 ", ttl=" + defaultMessageTimeToLive.toHours() + " hours" +
                 '}';

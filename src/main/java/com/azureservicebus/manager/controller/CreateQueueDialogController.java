@@ -33,6 +33,12 @@ public class CreateQueueDialogController implements Initializable {
     @FXML private CheckBox batchedOperationsCheckBox;
     @FXML private CheckBox requiresSessionCheckBox;
     @FXML private CheckBox partitioningCheckBox;
+    @FXML private CheckBox duplicateDetectionCheckBox;
+    
+    // Duplicate Detection
+    @FXML private javafx.scene.layout.VBox duplicateDetectionSection;
+    @FXML private Spinner<Integer> duplicateDetectionWindowSpinner;
+    @FXML private Separator duplicateDetectionSeparator;
     
     // Configurações adicionais
     @FXML private ComboBox<Integer> maxSizeComboBox;
@@ -53,6 +59,9 @@ public class CreateQueueDialogController implements Initializable {
         
         // Configurar ComboBox de tamanho
         setupMaxSizeComboBox();
+        
+        // Configurar Duplicate Detection
+        setupDuplicateDetection();
         
         // Configurar validação
         setupValidation();
@@ -81,6 +90,25 @@ public class CreateQueueDialogController implements Initializable {
             new IntegerSpinnerValueFactory(1, 8760, 336, 24)
         );
         ttlSpinner.setEditable(true);
+    }
+    
+    /**
+     * Configura a seção de Duplicate Detection
+     */
+    private void setupDuplicateDetection() {
+        // Duplicate Detection Window: 1 a 10080 minutos (7 dias), padrão 10
+        duplicateDetectionWindowSpinner.setValueFactory(
+            new IntegerSpinnerValueFactory(1, 10080, 10, 1)
+        );
+        duplicateDetectionWindowSpinner.setEditable(true);
+        
+        // Listener para mostrar/ocultar seção baseado no checkbox
+        duplicateDetectionCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> {
+            duplicateDetectionSection.setVisible(newVal);
+            duplicateDetectionSection.setManaged(newVal);
+            duplicateDetectionSeparator.setVisible(newVal);
+            duplicateDetectionSeparator.setManaged(newVal);
+        });
     }
     
     /**
@@ -205,6 +233,12 @@ public class CreateQueueDialogController implements Initializable {
             configuration.setRequiresSession(requiresSessionCheckBox.isSelected());
             configuration.setPartitioningEnabled(partitioningCheckBox.isSelected());
             
+            // Duplicate Detection
+            configuration.setDuplicateDetectionEnabled(duplicateDetectionCheckBox.isSelected());
+            if (duplicateDetectionCheckBox.isSelected()) {
+                configuration.setDuplicateDetectionHistoryTimeWindowMinutes(duplicateDetectionWindowSpinner.getValue());
+            }
+            
             // Configurações adicionais
             configuration.setMaxSizeInMB(maxSizeComboBox.getValue());
             configuration.setDefaultMessageTimeToLiveHours(ttlSpinner.getValue());
@@ -268,6 +302,8 @@ public class CreateQueueDialogController implements Initializable {
         batchedOperationsCheckBox.setSelected(config.isBatchedOperationsEnabled());
         requiresSessionCheckBox.setSelected(config.isRequiresSession());
         partitioningCheckBox.setSelected(config.isPartitioningEnabled());
+        duplicateDetectionCheckBox.setSelected(config.isDuplicateDetectionEnabled());
+        duplicateDetectionWindowSpinner.getValueFactory().setValue(config.getDuplicateDetectionHistoryTimeWindowMinutes());
         maxSizeComboBox.setValue((int) config.getMaxSizeInMB());
         ttlSpinner.getValueFactory().setValue(config.getDefaultMessageTimeToLiveHours());
     }

@@ -328,10 +328,22 @@ public class ServiceBusService {
                 String queueName = config.getName();
                 
                 // Criar CreateQueueOptions com todas as configurações
-                // Nota: Algumas propriedades como session e partitioning só podem ser definidas na criação
+                // Nota: Algumas propriedades como session, partitioning e duplicate detection só podem ser definidas na criação
                 CreateQueueOptions options = new CreateQueueOptions();
                 
-                // Criar a fila primeiro com configurações básicas
+                // Configurações que DEVEM ser definidas na criação (não podem ser alteradas depois)
+                if (config.isRequiresSession()) {
+                    options.setSessionRequired(true);
+                }
+                if (config.isPartitioningEnabled()) {
+                    options.setPartitioningEnabled(true);
+                }
+                if (config.isDuplicateDetectionEnabled()) {
+                    options.setDuplicateDetectionRequired(true);
+                    options.setDuplicateDetectionHistoryTimeWindow(config.getDuplicateDetectionHistoryTimeWindow());
+                }
+                
+                // Criar a fila com configurações iniciais
                 QueueProperties queueProperties = adminClient.createQueue(queueName, options);
                 
                 // Aplicar configurações que podem ser modificadas após criação
@@ -345,14 +357,23 @@ public class ServiceBusService {
                 // Atualizar a fila com as configurações
                 adminClient.updateQueue(queueProperties);
                 
-                logMessage(String.format("Fila '%s' criada com configurações customizadas: maxDeliveryCount=%d, lockDuration=%d min", 
-                    queueName, config.getMaxDeliveryCount(), config.getLockDurationMinutes()));
-                
-                // Avisar sobre configurações que requerem recreação
-                if (config.isRequiresSession() || config.isPartitioningEnabled()) {
-                    logMessage("AVISO: Configurações de Session e Partitioning requerem recreação da fila. " +
-                               "A fila foi criada sem essas configurações.");
+                // Log detalhado das configurações aplicadas
+                StringBuilder configLog = new StringBuilder();
+                configLog.append(String.format("Fila '%s' criada com configurações customizadas: ", queueName));
+                configLog.append(String.format("maxDeliveryCount=%d, ", config.getMaxDeliveryCount()));
+                configLog.append(String.format("lockDuration=%d min, ", config.getLockDurationMinutes()));
+                if (config.isDuplicateDetectionEnabled()) {
+                    configLog.append(String.format("duplicateDetection=enabled (window=%d min), ", 
+                        config.getDuplicateDetectionHistoryTimeWindowMinutes()));
                 }
+                if (config.isRequiresSession()) {
+                    configLog.append("requiresSession=true, ");
+                }
+                if (config.isPartitioningEnabled()) {
+                    configLog.append("partitioning=true, ");
+                }
+                
+                logMessage(configLog.toString().replaceAll(", $", ""));
                 
                 return CreateQueueResult.CREATED;
                 

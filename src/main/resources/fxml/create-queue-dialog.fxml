@@ -7,7 +7,7 @@
 
 <DialogPane xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" 
             fx:controller="com.azureservicebus.manager.controller.CreateQueueDialogController"
-            prefWidth="600" prefHeight="650">
+            prefWidth="650" minHeight="400">
    
    <content>
       <VBox spacing="20.0" styleClass="dialog-content">
@@ -124,9 +124,33 @@
                               wrapText="true" maxWidth="300" />
                   </tooltip>
                </CheckBox>
+               
+               <CheckBox fx:id="duplicateDetectionCheckBox" text="Enable Duplicate Detection">
+                  <tooltip>
+                     <Tooltip text="Detecta e descarta mensagens duplicadas com base no MessageId" 
+                              wrapText="true" maxWidth="300" />
+                  </tooltip>
+               </CheckBox>
             </VBox>
             
             <Separator />
+            
+            <!-- Duplicate Detection Window (visível apenas quando habilitado) -->
+            <VBox fx:id="duplicateDetectionSection" spacing="5.0" visible="false" managed="false">
+               <Label text="Duplicate Detection Window (minutos):" />
+               <HBox spacing="5.0" alignment="CENTER_LEFT">
+                  <Spinner fx:id="duplicateDetectionWindowSpinner" editable="true" 
+                           prefWidth="150.0" />
+                  <Label text="ℹ️" styleClass="info-icon">
+                     <tooltip>
+                        <Tooltip text="Janela de tempo para manter histórico de IDs de mensagens (1 a 10080 minutos = 7 dias)" 
+                                 wrapText="true" maxWidth="300" />
+                     </tooltip>
+                  </Label>
+               </HBox>
+            </VBox>
+            
+            <Separator fx:id="duplicateDetectionSeparator" visible="false" managed="false" />
             
             <!-- Campos Numéricos Adicionais -->
             <GridPane hgap="15.0" vgap="10.0">

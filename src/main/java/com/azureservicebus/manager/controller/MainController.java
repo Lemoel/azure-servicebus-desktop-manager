@@ -1101,22 +1101,25 @@ public class MainController implements Initializable {
                 dialogController.setInitialQueueName(initialName);
             }
             
-            // IMPORTANTE: Configurar os ButtonTypes ANTES de chamar setDialogPane()
-            // para que o controller possa registar os event filters corretamente
-            dialogPane.getButtonTypes().setAll(ButtonType.CANCEL, ButtonType.OK);
-            Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
-            okButton.setText("✅ Criar Fila");
-            
-            Button cancelButton = (Button) dialogPane.lookupButton(ButtonType.CANCEL);
-            cancelButton.setText("❌ Cancelar");
-            
-            // Agora configurar o diálogo - os botões já existem
-            dialogController.setDialogPane(dialogPane);
-            
-            // Criar e exibir o diálogo
+            // Criar o diálogo PRIMEIRO
             Dialog<ButtonType> dialog = new Dialog<>();
             dialog.setDialogPane(dialogPane);
             dialog.setTitle("Configurar Nova Fila");
+            
+            // Customizar textos dos botões
+            Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
+            if (okButton != null) {
+                okButton.setText("✅ Criar Fila");
+            }
+            
+            Button cancelButton = (Button) dialogPane.lookupButton(ButtonType.CANCEL);
+            if (cancelButton != null) {
+                cancelButton.setText("❌ Cancelar");
+            }
+            
+            // IMPORTANTE: Configurar o controller DEPOIS que o Dialog foi criado
+            // e os botões já existem no dialogPane
+            dialogController.setDialogPane(dialogPane);
             
             // Exibir diálogo e processar resultado
             Optional<ButtonType> result = dialog.showAndWait();
