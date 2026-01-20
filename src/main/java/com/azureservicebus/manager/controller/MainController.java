@@ -69,6 +69,7 @@ public class MainController implements Initializable {
     
     @FXML private TextField newQueueNameField;
     @FXML private Button createQueueButton;
+    @FXML private Button createAdvancedQueueButton;
     
     // Aba de Tópicos
     @FXML private Button loadTopicsButton;
@@ -649,6 +650,11 @@ public class MainController implements Initializable {
         
         createQueueButton.setOnAction(e -> handleCreateQueue());
         
+        // Criar fila avançada - se o botão existir (pode não existir em versões antigas do FXML)
+        if (createAdvancedQueueButton != null) {
+            createAdvancedQueueButton.setOnAction(e -> handleCreateAdvancedQueue());
+        }
+        
         // Mensagens
         loadMessagesButton.setOnAction(e -> handleLoadMessages());
         messagesTable.getSelectionModel().selectedItemProperty().addListener(
@@ -996,6 +1002,121 @@ public class MainController implements Initializable {
         };
         
         new Thread(createTask).start();
+    }
+    
+    /**
+     * Abre diálogo para criação de fila com configurações avançadas
+     */
+    private void handleCreateAdvancedQueue() {
+        try {
+            // Carregar o FXML do diálogo
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                getClass().getResource("/fxml/create-queue-dialog.fxml")
+            );
+            
+            DialogPane dialogPane = loader.load();
+            CreateQueueDialogController dialogController = loader.getController();
+            
+            // Pré-preencher com o nome digitado, se houver
+            String initialName = newQueueNameField.getText().trim();
+            if (!initialName.isEmpty()) {
+                dialogController.setInitialQueueName(initialName);
+            }
+            
+            // IMPORTANTE: Configurar os ButtonTypes ANTES de chamar setDialogPane()
+            // para que o controller possa registar os event filters corretamente
+            dialogPane.getButtonTypes().setAll(ButtonType.CANCEL, ButtonType.OK);
+            Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
+            okButton.setText("✅ Criar Fila");
+            
+            Button cancelButton = (Button) dialogPane.lookupButton(ButtonType.CANCEL);
+            cancelButton.setText("❌ Cancelar");
+            
+            // Agora configurar o diálogo - os botões já existem
+            dialogController.setDialogPane(dialogPane);
+            
+            // Criar e exibir o diálogo
+            Dialog<ButtonType> dialog = new Dialog<>();
+            dialog.setDialogPane(dialogPane);
+            dialog.setTitle("Configurar Nova Fila");
+            
+            // Exibir diálogo e processar resultado
+            Optional<ButtonType> result = dialog.showAndWait();
+            
+            if (result.isPresent() && result.get() == ButtonType.OK) {
+                // Obter configuração do diálogo
+                com.azureservicebus.manager.model.QueueConfiguration config = dialogController.getConfiguration();
+                
+                if (config != null && config.isValid()) {
+                    // Criar fila com configurações customizadas
+                    createAdvancedQueueButton.setDisable(true);
+                    
+                    Task<CreateQueueResult> createTask = new Task<CreateQueueResult>() {
+                        @Override
+                        protected CreateQueueResult call() throws Exception {
+                            return serviceBusService.createQueueAsync(config).get();
+                        }
+                        
+                        @Override
+                        protected void succeeded() {
+                            Platform.runLater(() -> {
+                                createAdvancedQueueButton.setDisable(false);
+                                newQueueNameField.clear();
+                                
+                                CreateQueueResult createResult = getValue();
+                                switch (createResult) {
+                                    case CREATED:
+                                        addLogMessage(String.format("Fila '%s' criada com configurações customizadas!", config.getName()));
+                                        showAlert("Sucesso", 
+                                            String.format("Fila '%s' foi criada com sucesso!\n\nConfigurações aplicadas:\n" +
+                                                "• Max Delivery Count: %d\n" +
+                                                "• Lock Duration: %d minuto(s)\n" +
+                                                "• Dead Letter on Expiration: %s\n" +
+                                                "• Batched Operations: %s",
+                                                config.getName(),
+                                                config.getMaxDeliveryCount(),
+                                                config.getLockDurationMinutes(),
+                                                config.isDeadLetteringOnMessageExpiration() ? "Sim" : "Não",
+                                                config.isBatchedOperationsEnabled() ? "Sim" : "Não"
+                                            ), 
+                                            Alert.AlertType.INFORMATION);
+                                        handleLoadQueues();
+                                        break;
+                                        
+                                    case ALREADY_EXISTS:
+                                        addLogMessage(String.format("Fila '%s' já existe no namespace", config.getName()));
+                                        showAlert("Informação", 
+                                            String.format("A fila '%s' já existe no namespace.\nVocê pode utilizá-la normalmente.", config.getName()), 
+                                            Alert.AlertType.WARNING);
+                                        handleLoadQueues();
+                                        break;
+                                        
+                                    case ERROR:
+                                        showAlert("Erro", 
+                                            String.format("Erro ao criar fila '%s'. Verifique os logs para mais detalhes.", config.getName()), 
+                                            Alert.AlertType.ERROR);
+                                        break;
+                                }
+                            });
+                        }
+                        
+                        @Override
+                        protected void failed() {
+                            Platform.runLater(() -> {
+                                createAdvancedQueueButton.setDisable(false);
+                                showAlert("Erro", "Erro ao criar fila: " + getException().getMessage(), Alert.AlertType.ERROR);
+                            });
+                        }
+                    };
+                    
+                    new Thread(createTask).start();
+                }
+            }
+            
+        } catch (Exception e) {
+            logger.error("Erro ao abrir diálogo de criação avançada", e);
+            showAlert("Erro", "Erro ao abrir diálogo: " + e.getMessage(), Alert.AlertType.ERROR);
+        }
     }
     
     

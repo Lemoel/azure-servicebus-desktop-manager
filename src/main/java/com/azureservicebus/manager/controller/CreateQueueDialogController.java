@@ -1,0 +1,274 @@
+package com.azureservicebus.manager.controller;
+
+import com.azureservicebus.manager.model.QueueConfiguration;
+import javafx.collections.FXCollections;
+import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
+import javafx.scene.control.*;
+import javafx.scene.control.SpinnerValueFactory.IntegerSpinnerValueFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.net.URL;
+import java.util.ResourceBundle;
+
+/**
+ * Controller para o diálogo de criação avançada de filas.
+ * Gerencia a entrada de configurações customizadas do usuário.
+ */
+public class CreateQueueDialogController implements Initializable {
+    
+    private static final Logger logger = LoggerFactory.getLogger(CreateQueueDialogController.class);
+    
+    // Campos básicos
+    @FXML private TextField queueNameField;
+    @FXML private Label nameErrorLabel;
+    
+    // Configurações de entrega
+    @FXML private Spinner<Integer> maxDeliveryCountSpinner;
+    @FXML private Spinner<Integer> lockDurationSpinner;
+    
+    // Checkboxes
+    @FXML private CheckBox deadLetterCheckBox;
+    @FXML private CheckBox batchedOperationsCheckBox;
+    @FXML private CheckBox requiresSessionCheckBox;
+    @FXML private CheckBox partitioningCheckBox;
+    
+    // Configurações adicionais
+    @FXML private ComboBox<Integer> maxSizeComboBox;
+    @FXML private Spinner<Integer> ttlSpinner;
+    
+    private QueueConfiguration configuration;
+    private DialogPane dialogPane;
+    
+    @Override
+    public void initialize(URL location, ResourceBundle resources) {
+        logger.info("Inicializando CreateQueueDialogController");
+        
+        // Inicializar configuração com valores padrão
+        configuration = new QueueConfiguration();
+        
+        // Configurar spinners
+        setupSpinners();
+        
+        // Configurar ComboBox de tamanho
+        setupMaxSizeComboBox();
+        
+        // Configurar validação
+        setupValidation();
+        
+        logger.info("CreateQueueDialogController inicializado com sucesso");
+    }
+    
+    /**
+     * Configura os spinners com valores padrão e limites
+     */
+    private void setupSpinners() {
+        // Max Delivery Count: 1 a 2000, padrão 10
+        maxDeliveryCountSpinner.setValueFactory(
+            new IntegerSpinnerValueFactory(1, 2000, 10, 1)
+        );
+        maxDeliveryCountSpinner.setEditable(true);
+        
+        // Lock Duration: 0 a 5 minutos, padrão 1
+        lockDurationSpinner.setValueFactory(
+            new IntegerSpinnerValueFactory(0, 5, 1, 1)
+        );
+        lockDurationSpinner.setEditable(true);
+        
+        // Default TTL: 1 a 8760 horas (1 ano), padrão 336 (14 dias)
+        ttlSpinner.setValueFactory(
+            new IntegerSpinnerValueFactory(1, 8760, 336, 24)
+        );
+        ttlSpinner.setEditable(true);
+    }
+    
+    /**
+     * Configura o ComboBox de tamanho máximo
+     */
+    private void setupMaxSizeComboBox() {
+        maxSizeComboBox.setItems(FXCollections.observableArrayList(
+            1024, 2048, 3072, 4096, 5120
+        ));
+        maxSizeComboBox.setValue(1024); // Padrão: 1GB
+        
+        // Formatar exibição
+        maxSizeComboBox.setButtonCell(new ListCell<Integer>() {
+            @Override
+            protected void updateItem(Integer item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(item + " MB (" + (item / 1024.0) + " GB)");
+                }
+            }
+        });
+        
+        maxSizeComboBox.setCellFactory(param -> new ListCell<Integer>() {
+            @Override
+            protected void updateItem(Integer item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(item + " MB (" + (item / 1024.0) + " GB)");
+                }
+            }
+        });
+    }
+    
+    /**
+     * Configura validação em tempo real
+     */
+    private void setupValidation() {
+        // Validação do nome da fila
+        queueNameField.textProperty().addListener((obs, oldVal, newVal) -> {
+            validateQueueName(newVal);
+        });
+    }
+    
+    /**
+     * Valida o nome da fila
+     */
+    private void validateQueueName(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            nameErrorLabel.setText("Nome da fila é obrigatório");
+            nameErrorLabel.setVisible(true);
+            return;
+        }
+        
+        // Validações do Azure Service Bus para nomes de fila
+        if (name.length() > 260) {
+            nameErrorLabel.setText("Nome não pode exceder 260 caracteres");
+            nameErrorLabel.setVisible(true);
+            return;
+        }
+        
+        if (!name.matches("^[a-zA-Z0-9][a-zA-Z0-9._-]*$")) {
+            nameErrorLabel.setText("Nome deve começar com letra/número e conter apenas letras, números, pontos, hífens ou underscores");
+            nameErrorLabel.setVisible(true);
+            return;
+        }
+        
+        // Nome válido
+        nameErrorLabel.setVisible(false);
+    }
+    
+    /**
+     * Define o DialogPane pai para controle dos botões
+     */
+    public void setDialogPane(DialogPane dialogPane) {
+        this.dialogPane = dialogPane;
+        
+        // Adicionar validação ao botão OK
+        Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
+        if (okButton != null) {
+            okButton.addEventFilter(javafx.event.ActionEvent.ACTION, event -> {
+                if (!validateAndBuildConfiguration()) {
+                    event.consume(); // Prevenir fechamento do diálogo
+                }
+            });
+        }
+    }
+    
+    /**
+     * Valida todos os campos e constrói a configuração
+     * @return true se válido, false caso contrário
+     */
+    private boolean validateAndBuildConfiguration() {
+        String name = queueNameField.getText();
+        
+        // Validar nome
+        if (name == null || name.trim().isEmpty()) {
+            showError("Nome da fila é obrigatório");
+            return false;
+        }
+        
+        validateQueueName(name);
+        if (nameErrorLabel.isVisible()) {
+            showError("Nome da fila inválido: " + nameErrorLabel.getText());
+            return false;
+        }
+        
+        try {
+            // Construir configuração
+            configuration = new QueueConfiguration(name.trim());
+            
+            // Configurações de entrega
+            configuration.setMaxDeliveryCount(maxDeliveryCountSpinner.getValue());
+            configuration.setLockDurationMinutes(lockDurationSpinner.getValue());
+            
+            // Checkboxes
+            configuration.setDeadLetteringOnMessageExpiration(deadLetterCheckBox.isSelected());
+            configuration.setBatchedOperationsEnabled(batchedOperationsCheckBox.isSelected());
+            configuration.setRequiresSession(requiresSessionCheckBox.isSelected());
+            configuration.setPartitioningEnabled(partitioningCheckBox.isSelected());
+            
+            // Configurações adicionais
+            configuration.setMaxSizeInMB(maxSizeComboBox.getValue());
+            configuration.setDefaultMessageTimeToLiveHours(ttlSpinner.getValue());
+            
+            // Validar configuração completa
+            if (!configuration.isValid()) {
+                String error = configuration.getValidationError();
+                showError(error != null ? error : "Configuração inválida");
+                return false;
+            }
+            
+            logger.info("Configuração validada: {}", configuration);
+            return true;
+            
+        } catch (Exception e) {
+            logger.error("Erro ao validar configuração", e);
+            showError("Erro ao validar configuração: " + e.getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Exibe mensagem de erro
+     */
+    private void showError(String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Erro de Validação");
+        alert.setHeaderText("Configuração Inválida");
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+    
+    /**
+     * Retorna a configuração construída (válida apenas se o diálogo foi confirmado)
+     */
+    public QueueConfiguration getConfiguration() {
+        return configuration;
+    }
+    
+    /**
+     * Define o nome inicial da fila (opcional)
+     */
+    public void setInitialQueueName(String name) {
+        if (name != null && !name.trim().isEmpty()) {
+            queueNameField.setText(name.trim());
+        }
+    }
+    
+    /**
+     * Define valores iniciais da configuração (para edição)
+     */
+    public void setInitialConfiguration(QueueConfiguration config) {
+        if (config == null) {
+            return;
+        }
+        
+        queueNameField.setText(config.getName());
+        maxDeliveryCountSpinner.getValueFactory().setValue(config.getMaxDeliveryCount());
+        lockDurationSpinner.getValueFactory().setValue(config.getLockDurationMinutes());
+        deadLetterCheckBox.setSelected(config.isDeadLetteringOnMessageExpiration());
+        batchedOperationsCheckBox.setSelected(config.isBatchedOperationsEnabled());
+        requiresSessionCheckBox.setSelected(config.isRequiresSession());
+        partitioningCheckBox.setSelected(config.isPartitioningEnabled());
+        maxSizeComboBox.setValue((int) config.getMaxSizeInMB());
+        ttlSpinner.getValueFactory().setValue(config.getDefaultMessageTimeToLiveHours());
+    }
+}

@@ -117,10 +117,12 @@
                               <!-- Create Queue Section -->
                               <VBox styleClass="action-section" spacing="5.0">
                                  <Label styleClass="subsection-title" text="➕ Criar Nova Fila" />
+                                 <TextField fx:id="newQueueNameField" promptText="Nome da nova fila" />
                                  <HBox spacing="10.0" alignment="CENTER_LEFT">
-                                    <TextField fx:id="newQueueNameField" promptText="Nome da nova fila" HBox.hgrow="ALWAYS" />
-                                    <Button fx:id="createQueueButton" styleClass="success-button" text="🚀 Criar Fila" />
+                                    <Button fx:id="createQueueButton" styleClass="success-button" text="🚀 Criar Simples (Padrão)" />
+                                    <Button fx:id="createAdvancedQueueButton" styleClass="primary-button" text="⚙️ Criar com Configurações" />
                                  </HBox>
+                                 <Label styleClass="help-text" text="💡 Use 'Criar com Configurações' para definir maxDeliveryCount e lockDuration" />
                               </VBox>
                            </VBox>
                         </ScrollPane>

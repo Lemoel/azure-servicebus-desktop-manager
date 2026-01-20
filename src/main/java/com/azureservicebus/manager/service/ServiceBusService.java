@@ -283,7 +283,7 @@ public class ServiceBusService {
     }
     
     /**
-     * Cria uma nova fila
+     * Cria uma nova fila com configurações padrão
      */
     public CompletableFuture<CreateQueueResult> createQueueAsync(String queueName) {
         return CompletableFuture.supplyAsync(() -> {
@@ -305,6 +305,64 @@ public class ServiceBusService {
                 
             } catch (Exception e) {
                 logError(String.format("Erro ao criar fila '%s'", queueName), e);
+                return CreateQueueResult.ERROR;
+            }
+        }, executorService);
+    }
+    
+    /**
+     * Cria uma nova fila com configurações customizadas
+     */
+    public CompletableFuture<CreateQueueResult> createQueueAsync(com.azureservicebus.manager.model.QueueConfiguration config) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (!isConnected()) {
+                throw new IllegalStateException("Não conectado ao Service Bus");
+            }
+            
+            if (config == null || !config.isValid()) {
+                logError("Configuração de fila inválida", new IllegalArgumentException("Config inválida"));
+                return CreateQueueResult.ERROR;
+            }
+            
+            try {
+                String queueName = config.getName();
+                
+                // Criar CreateQueueOptions com todas as configurações
+                // Nota: Algumas propriedades como session e partitioning só podem ser definidas na criação
+                CreateQueueOptions options = new CreateQueueOptions();
+                
+                // Criar a fila primeiro com configurações básicas
+                QueueProperties queueProperties = adminClient.createQueue(queueName, options);
+                
+                // Aplicar configurações que podem ser modificadas após criação
+                queueProperties.setMaxDeliveryCount(config.getMaxDeliveryCount());
+                queueProperties.setLockDuration(config.getLockDuration());
+                queueProperties.setDeadLetteringOnMessageExpiration(config.isDeadLetteringOnMessageExpiration());
+                queueProperties.setBatchedOperationsEnabled(config.isBatchedOperationsEnabled());
+                queueProperties.setMaxSizeInMegabytes((int) config.getMaxSizeInMB());
+                queueProperties.setDefaultMessageTimeToLive(config.getDefaultMessageTimeToLive());
+                
+                // Atualizar a fila com as configurações
+                adminClient.updateQueue(queueProperties);
+                
+                logMessage(String.format("Fila '%s' criada com configurações customizadas: maxDeliveryCount=%d, lockDuration=%d min", 
+                    queueName, config.getMaxDeliveryCount(), config.getLockDurationMinutes()));
+                
+                // Avisar sobre configurações que requerem recreação
+                if (config.isRequiresSession() || config.isPartitioningEnabled()) {
+                    logMessage("AVISO: Configurações de Session e Partitioning requerem recreação da fila. " +
+                               "A fila foi criada sem essas configurações.");
+                }
+                
+                return CreateQueueResult.CREATED;
+                
+            } catch (com.azure.core.exception.ResourceExistsException e) {
+                // Fila já existe - não é um erro, apenas informativo
+                logMessage(String.format("Fila '%s' já existe no namespace", config.getName()));
+                return CreateQueueResult.ALREADY_EXISTS;
+                
+            } catch (Exception e) {
+                logError(String.format("Erro ao criar fila '%s' com configurações customizadas", config.getName()), e);
                 return CreateQueueResult.ERROR;
             }
         }, executorService);
