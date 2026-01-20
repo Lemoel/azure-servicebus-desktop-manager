@@ -41,7 +41,8 @@ public class RulesDialogController implements Initializable {
     @FXML private Button refreshRulesButton;
     @FXML private Label rulesCountLabel;
     
-    // Formulário de Criação de Rule
+    // Formulário de Criação/Edição de Rule
+    @FXML private Label formTitleLabel;
     @FXML private TextField newRuleNameField;
     @FXML private ComboBox<String> filterTypeComboBox;
     @FXML private VBox sqlFilterSection;
@@ -54,6 +55,8 @@ public class RulesDialogController implements Initializable {
     @FXML private TextField labelField;
     @FXML private TextField contentTypeField;
     @FXML private Button createRuleButton;
+    @FXML private Button newRuleButton;
+    @FXML private Button cancelEditButton;
     
     // Dados
     private String topicName;
@@ -61,6 +64,10 @@ public class RulesDialogController implements Initializable {
     private ServiceBusService serviceBusService;
     private ObservableList<RuleInfo> rules = FXCollections.observableArrayList();
     private DialogPane dialogPane;
+    
+    // Controle de modo de edição
+    private boolean isEditMode = false;
+    private RuleInfo editingRule = null;
     
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -106,10 +113,39 @@ public class RulesDialogController implements Initializable {
             cellData.getValue().nameProperty().map(name -> cellData.getValue().getFilterTypeDescription())
         );
         
-        // Coluna de expressão - usar método formatado
+        // Coluna de expressão - usar método formatado com tooltip
         ruleFilterExpressionColumn.setCellValueFactory(cellData -> 
             cellData.getValue().nameProperty().map(name -> cellData.getValue().getFormattedExpression())
         );
+        
+        // Adicionar tooltip para mostrar expressão completa
+        ruleFilterExpressionColumn.setCellFactory(column -> {
+            return new TableCell<RuleInfo, String>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText(null);
+                        setTooltip(null);
+                    } else {
+                        setText(item);
+                        // Pegar a rule da linha atual
+                        RuleInfo ruleInfo = getTableView().getItems().get(getIndex());
+                        String fullExpression = ruleInfo.getFilterExpression();
+                        
+                        // Só adicionar tooltip se o texto for diferente (foi truncado)
+                        if (fullExpression != null && !fullExpression.equals(item)) {
+                            Tooltip tooltip = new Tooltip(fullExpression);
+                            tooltip.setWrapText(true);
+                            tooltip.setMaxWidth(400);
+                            setTooltip(tooltip);
+                        } else {
+                            setTooltip(null);
+                        }
+                    }
+                }
+            };
+        });
         
         setupActionsColumn();
     }
@@ -183,7 +219,24 @@ public class RulesDialogController implements Initializable {
     
     private void setupEventHandlers() {
         refreshRulesButton.setOnAction(e -> loadRules());
-        createRuleButton.setOnAction(e -> handleCreateRule());
+        createRuleButton.setOnAction(e -> handleCreateOrUpdateRule());
+        newRuleButton.setOnAction(e -> switchToCreateMode());
+        cancelEditButton.setOnAction(e -> switchToCreateMode());
+        
+        // Listener para seleção na tabela
+        rulesTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            if (newSelection != null) {
+                if (newSelection.getIsDefault()) {
+                    // Se for $Default, apenas limpar seleção e não entrar em modo edição
+                    Platform.runLater(() -> {
+                        rulesTable.getSelectionModel().clearSelection();
+                    });
+                } else {
+                    // Se não for $Default, entrar em modo edição
+                    switchToEditMode(newSelection);
+                }
+            }
+        });
     }
     
     private void loadRules() {
@@ -225,6 +278,192 @@ public class RulesDialogController implements Initializable {
         };
         
         new Thread(loadTask).start();
+    }
+    
+    private void switchToCreateMode() {
+        isEditMode = false;
+        editingRule = null;
+        
+        // Atualizar UI
+        formTitleLabel.setText("➕ Criar Nova Rule");
+        createRuleButton.setText("✅ Criar Rule");
+        newRuleButton.setVisible(false);
+        newRuleButton.setManaged(false);
+        cancelEditButton.setVisible(false);
+        cancelEditButton.setManaged(false);
+        
+        // Habilitar campo nome
+        newRuleNameField.setDisable(false);
+        newRuleNameField.setStyle("");
+        
+        // Limpar formulário
+        clearCreateForm();
+        
+        // Limpar seleção da tabela
+        rulesTable.getSelectionModel().clearSelection();
+    }
+    
+    private void switchToEditMode(RuleInfo ruleInfo) {
+        isEditMode = true;
+        editingRule = ruleInfo;
+        
+        // Atualizar UI
+        formTitleLabel.setText("✏️ Editar Rule");
+        createRuleButton.setText("💾 Salvar Alterações");
+        newRuleButton.setVisible(true);
+        newRuleButton.setManaged(true);
+        cancelEditButton.setVisible(true);
+        cancelEditButton.setManaged(true);
+        
+        // Desabilitar campo nome (não pode ser alterado)
+        newRuleNameField.setDisable(true);
+        newRuleNameField.setStyle("-fx-opacity: 0.6;");
+        
+        // Preencher formulário com dados da rule
+        fillFormWithRuleData(ruleInfo);
+    }
+    
+    private void fillFormWithRuleData(RuleInfo ruleInfo) {
+        // Nome da rule
+        newRuleNameField.setText(ruleInfo.getName());
+        
+        // Determinar tipo de filtro e preencher campos apropriados
+        String filterType = ruleInfo.getFilterType();
+        
+        if (filterType != null && (filterType.contains("SqlFilter") || filterType.contains("SQL"))) {
+            // SQL Filter
+            filterTypeComboBox.setValue("SQL Filter");
+            sqlExpressionTextArea.setText(ruleInfo.getFilterExpression());
+            
+            // Limpar campos de correlation
+            correlationIdField.clear();
+            messageIdField.clear();
+            sessionIdField.clear();
+            replyToField.clear();
+            labelField.clear();
+            contentTypeField.clear();
+            
+        } else if (filterType != null && (filterType.contains("CorrelationFilter") || filterType.contains("Correlation"))) {
+            // Correlation Filter
+            filterTypeComboBox.setValue("Correlation Filter");
+            
+            // Preencher campos individuais
+            correlationIdField.setText(ruleInfo.getCorrelationId() != null ? ruleInfo.getCorrelationId() : "");
+            messageIdField.setText(ruleInfo.getMessageId() != null ? ruleInfo.getMessageId() : "");
+            sessionIdField.setText(ruleInfo.getSessionId() != null ? ruleInfo.getSessionId() : "");
+            replyToField.setText(ruleInfo.getReplyTo() != null ? ruleInfo.getReplyTo() : "");
+            labelField.setText(ruleInfo.getLabel() != null ? ruleInfo.getLabel() : "");
+            contentTypeField.setText(ruleInfo.getContentType() != null ? ruleInfo.getContentType() : "");
+            
+            // Limpar SQL expression
+            sqlExpressionTextArea.clear();
+        } else {
+            // True/False filter - não editável, voltar para modo criação
+            showAlert("Aviso", "Este tipo de filtro não pode ser editado. Crie uma nova rule.", Alert.AlertType.WARNING);
+            switchToCreateMode();
+        }
+    }
+    
+    private void handleCreateOrUpdateRule() {
+        if (isEditMode) {
+            handleUpdateRule();
+        } else {
+            handleCreateRule();
+        }
+    }
+    
+    private void handleUpdateRule() {
+        if (editingRule == null) {
+            showAlert("Erro", "Nenhuma rule selecionada para edição", Alert.AlertType.ERROR);
+            return;
+        }
+        
+        String ruleName = editingRule.getName();
+        String filterType = filterTypeComboBox.getValue();
+        
+        // Validações
+        if (filterType == null) {
+            showAlert("Erro", "Selecione o tipo de filtro", Alert.AlertType.ERROR);
+            return;
+        }
+        
+        // Confirmar atualização
+        Optional<ButtonType> result = showConfirmation(
+            "Confirmar Atualização",
+            String.format("Tem certeza que deseja atualizar a rule '%s'?\n\nA rule será removida e recriada com as novas configurações.", ruleName)
+        );
+        
+        if (result.isEmpty() || result.get() != ButtonType.OK) {
+            return;
+        }
+        
+        createRuleButton.setDisable(true);
+        
+        Task<Boolean> updateTask = new Task<Boolean>() {
+            @Override
+            protected Boolean call() throws Exception {
+                // Passo 1: Deletar rule existente
+                boolean deleted = serviceBusService.deleteRuleAsync(topicName, subscriptionName, ruleName).get();
+                
+                if (!deleted) {
+                    throw new RuntimeException("Falha ao remover rule existente");
+                }
+                
+                // Passo 2: Criar nova rule com configurações atualizadas
+                if (filterType.equals("SQL Filter")) {
+                    String sqlExpression = sqlExpressionTextArea.getText().trim();
+                    if (sqlExpression.isEmpty()) {
+                        throw new IllegalArgumentException("Digite a expressão SQL");
+                    }
+                    return serviceBusService.createSqlRuleAsync(topicName, subscriptionName, ruleName, sqlExpression).get();
+                } else {
+                    // Correlation Filter
+                    return serviceBusService.createCorrelationRuleAsync(
+                        topicName, 
+                        subscriptionName, 
+                        ruleName,
+                        correlationIdField.getText().trim(),
+                        messageIdField.getText().trim(),
+                        sessionIdField.getText().trim(),
+                        replyToField.getText().trim(),
+                        labelField.getText().trim(),
+                        contentTypeField.getText().trim()
+                    ).get();
+                }
+            }
+            
+            @Override
+            protected void succeeded() {
+                Platform.runLater(() -> {
+                    createRuleButton.setDisable(false);
+                    
+                    if (getValue()) {
+                        showAlert("Sucesso", 
+                            String.format("Rule '%s' atualizada com sucesso!", ruleName), 
+                            Alert.AlertType.INFORMATION);
+                        
+                        // Voltar para modo criação
+                        switchToCreateMode();
+                        
+                        // Recarregar lista
+                        loadRules();
+                    }
+                });
+            }
+            
+            @Override
+            protected void failed() {
+                Platform.runLater(() -> {
+                    createRuleButton.setDisable(false);
+                    showAlert("Erro", "Erro ao atualizar rule: " + getException().getMessage(), Alert.AlertType.ERROR);
+                    
+                    // Recarregar lista para garantir estado consistente
+                    loadRules();
+                });
+            }
+        };
+        
+        new Thread(updateTask).start();
     }
     
     private void handleCreateRule() {

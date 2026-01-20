@@ -13,6 +13,14 @@ public class RuleInfo {
     private final StringProperty actionExpression = new SimpleStringProperty();
     private final BooleanProperty isDefault = new SimpleBooleanProperty();
     
+    // Campos para Correlation Filter (necessários para edição)
+    private final StringProperty correlationId = new SimpleStringProperty();
+    private final StringProperty messageId = new SimpleStringProperty();
+    private final StringProperty sessionId = new SimpleStringProperty();
+    private final StringProperty replyTo = new SimpleStringProperty();
+    private final StringProperty label = new SimpleStringProperty();
+    private final StringProperty contentType = new SimpleStringProperty();
+    
     // Construtores
     public RuleInfo() {}
     
@@ -43,6 +51,31 @@ public class RuleInfo {
     public boolean getIsDefault() { return isDefault.get(); }
     public void setIsDefault(boolean isDefault) { this.isDefault.set(isDefault); }
     public BooleanProperty isDefaultProperty() { return isDefault; }
+    
+    // Getters e Setters para Correlation Filter
+    public String getCorrelationId() { return correlationId.get(); }
+    public void setCorrelationId(String correlationId) { this.correlationId.set(correlationId); }
+    public StringProperty correlationIdProperty() { return correlationId; }
+    
+    public String getMessageId() { return messageId.get(); }
+    public void setMessageId(String messageId) { this.messageId.set(messageId); }
+    public StringProperty messageIdProperty() { return messageId; }
+    
+    public String getSessionId() { return sessionId.get(); }
+    public void setSessionId(String sessionId) { this.sessionId.set(sessionId); }
+    public StringProperty sessionIdProperty() { return sessionId; }
+    
+    public String getReplyTo() { return replyTo.get(); }
+    public void setReplyTo(String replyTo) { this.replyTo.set(replyTo); }
+    public StringProperty replyToProperty() { return replyTo; }
+    
+    public String getLabel() { return label.get(); }
+    public void setLabel(String label) { this.label.set(label); }
+    public StringProperty labelProperty() { return label; }
+    
+    public String getContentType() { return contentType.get(); }
+    public void setContentType(String contentType) { this.contentType.set(contentType); }
+    public StringProperty contentTypeProperty() { return contentType; }
     
     /**
      * Retorna descrição formatada do tipo de filtro

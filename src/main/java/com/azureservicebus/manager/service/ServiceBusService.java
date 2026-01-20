@@ -1260,7 +1260,28 @@ public class ServiceBusService {
                             ruleInfo.setFilterExpression(sqlFilter.getSqlExpression());
                         } else if (filter instanceof CorrelationRuleFilter) {
                             CorrelationRuleFilter corrFilter = (CorrelationRuleFilter) filter;
-                            // Montar descrição do correlation filter
+                            
+                            // Armazenar valores individuais para edição
+                            if (corrFilter.getCorrelationId() != null) {
+                                ruleInfo.setCorrelationId(corrFilter.getCorrelationId());
+                            }
+                            if (corrFilter.getMessageId() != null) {
+                                ruleInfo.setMessageId(corrFilter.getMessageId());
+                            }
+                            if (corrFilter.getSessionId() != null) {
+                                ruleInfo.setSessionId(corrFilter.getSessionId());
+                            }
+                            if (corrFilter.getReplyTo() != null) {
+                                ruleInfo.setReplyTo(corrFilter.getReplyTo());
+                            }
+                            if (corrFilter.getLabel() != null) {
+                                ruleInfo.setLabel(corrFilter.getLabel());
+                            }
+                            if (corrFilter.getContentType() != null) {
+                                ruleInfo.setContentType(corrFilter.getContentType());
+                            }
+                            
+                            // Montar descrição do correlation filter para exibição
                             StringBuilder expr = new StringBuilder();
                             if (corrFilter.getCorrelationId() != null && !corrFilter.getCorrelationId().isEmpty()) {
                                 expr.append("CorrelationId='").append(corrFilter.getCorrelationId()).append("' ");
