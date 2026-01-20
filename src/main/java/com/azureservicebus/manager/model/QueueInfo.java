@@ -22,6 +22,9 @@ public class QueueInfo {
     private final BooleanProperty partitioningEnabled = new SimpleBooleanProperty();
     private final BooleanProperty sessionRequired = new SimpleBooleanProperty();
     private final BooleanProperty duplicateDetectionEnabled = new SimpleBooleanProperty();
+    private final BooleanProperty deadLetteringOnMessageExpiration = new SimpleBooleanProperty();
+    private final BooleanProperty batchedOperationsEnabled = new SimpleBooleanProperty();
+    private final StringProperty defaultMessageTimeToLive = new SimpleStringProperty();
     private final ObjectProperty<LocalDateTime> createdAt = new SimpleObjectProperty<>();
     private final ObjectProperty<LocalDateTime> updatedAt = new SimpleObjectProperty<>();
     
@@ -90,6 +93,27 @@ public class QueueInfo {
     }
     public BooleanProperty duplicateDetectionEnabledProperty() { return duplicateDetectionEnabled; }
     
+    public boolean isDeadLetteringOnMessageExpiration() { return deadLetteringOnMessageExpiration.get(); }
+    public void setDeadLetteringOnMessageExpiration(boolean deadLetteringOnMessageExpiration) { 
+        this.deadLetteringOnMessageExpiration.set(deadLetteringOnMessageExpiration); 
+    }
+    public BooleanProperty deadLetteringOnMessageExpirationProperty() { return deadLetteringOnMessageExpiration; }
+    
+    public boolean isBatchedOperationsEnabled() { return batchedOperationsEnabled.get(); }
+    public void setBatchedOperationsEnabled(boolean batchedOperationsEnabled) { 
+        this.batchedOperationsEnabled.set(batchedOperationsEnabled); 
+    }
+    public BooleanProperty batchedOperationsEnabledProperty() { return batchedOperationsEnabled; }
+    
+    public String getDefaultMessageTimeToLive() { return defaultMessageTimeToLive.get(); }
+    public void setDefaultMessageTimeToLive(String defaultMessageTimeToLive) { 
+        this.defaultMessageTimeToLive.set(defaultMessageTimeToLive); 
+    }
+    public void setDefaultMessageTimeToLive(Duration duration) { 
+        this.defaultMessageTimeToLive.set(formatDuration(duration)); 
+    }
+    public StringProperty defaultMessageTimeToLiveProperty() { return defaultMessageTimeToLive; }
+    
     public LocalDateTime getCreatedAt() { return createdAt.get(); }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt.set(createdAt); }
     public ObjectProperty<LocalDateTime> createdAtProperty() { return createdAt; }
@@ -109,6 +133,14 @@ public class QueueInfo {
     
     public String getDuplicateDetectionEnabledText() {
         return isDuplicateDetectionEnabled() ? "Sim" : "Não";
+    }
+    
+    public String getDeadLetteringOnMessageExpirationText() {
+        return isDeadLetteringOnMessageExpiration() ? "Sim" : "Não";
+    }
+    
+    public String getBatchedOperationsEnabledText() {
+        return isBatchedOperationsEnabled() ? "Sim" : "Não";
     }
     
     public boolean hasMessages() {

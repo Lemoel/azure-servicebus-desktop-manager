@@ -67,6 +67,13 @@ public class MainController implements Initializable {
     @FXML private TableColumn<QueueInfo, Double> sizeColumn;
     @FXML private TableColumn<QueueInfo, String> lockDurationColumn;
     @FXML private TableColumn<QueueInfo, Integer> maxDeliveryCountColumn;
+    @FXML private TableColumn<QueueInfo, String> deadLetteringColumn;
+    @FXML private TableColumn<QueueInfo, String> batchedOpsColumn;
+    @FXML private TableColumn<QueueInfo, String> duplicateDetectionColumn;
+    @FXML private TableColumn<QueueInfo, String> sessionColumn;
+    @FXML private TableColumn<QueueInfo, String> partitioningColumn;
+    @FXML private TableColumn<QueueInfo, Long> maxSizeColumn;
+    @FXML private TableColumn<QueueInfo, String> defaultTTLColumn;
     @FXML private TableColumn<QueueInfo, Void> actionsColumn;
     
     @FXML private TextField newQueueNameField;
@@ -247,6 +254,13 @@ public class MainController implements Initializable {
         sizeColumn.setCellValueFactory(new PropertyValueFactory<>("sizeInKB"));
         lockDurationColumn.setCellValueFactory(new PropertyValueFactory<>("lockDuration"));
         maxDeliveryCountColumn.setCellValueFactory(new PropertyValueFactory<>("maxDeliveryCount"));
+        deadLetteringColumn.setCellValueFactory(new PropertyValueFactory<>("deadLetteringOnMessageExpirationText"));
+        batchedOpsColumn.setCellValueFactory(new PropertyValueFactory<>("batchedOperationsEnabledText"));
+        duplicateDetectionColumn.setCellValueFactory(new PropertyValueFactory<>("duplicateDetectionEnabledText"));
+        sessionColumn.setCellValueFactory(new PropertyValueFactory<>("sessionRequiredText"));
+        partitioningColumn.setCellValueFactory(new PropertyValueFactory<>("partitioningEnabledText"));
+        maxSizeColumn.setCellValueFactory(new PropertyValueFactory<>("maxSizeInMB"));
+        defaultTTLColumn.setCellValueFactory(new PropertyValueFactory<>("defaultMessageTimeToLive"));
         
         // Configurar coluna de ações
         setupActionsColumn();

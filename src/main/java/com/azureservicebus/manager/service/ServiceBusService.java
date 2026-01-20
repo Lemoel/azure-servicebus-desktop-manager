@@ -249,6 +249,9 @@ public class ServiceBusService {
                 queueInfo.setPartitioningEnabled(queueProperties.isPartitioningEnabled());
                 queueInfo.setSessionRequired(queueProperties.isSessionRequired());
                 queueInfo.setDuplicateDetectionEnabled(queueProperties.isDuplicateDetectionRequired());
+                queueInfo.setDeadLetteringOnMessageExpiration(queueProperties.isDeadLetteringOnMessageExpiration());
+                queueInfo.setBatchedOperationsEnabled(queueProperties.isBatchedOperationsEnabled());
+                queueInfo.setDefaultMessageTimeToLive(queueProperties.getDefaultMessageTimeToLive());
                 
                 // Runtime properties
                 queueInfo.setTotalMessages(runtimeProperties.getTotalMessageCount());
@@ -1057,7 +1060,7 @@ public class ServiceBusService {
     }
     
     /**
-     * Cria uma nova subscription em um tópico
+     * Cria uma nova subscription em um tópico (com rule $Default automática)
      */
     public CompletableFuture<CreateQueueResult> createSubscriptionAsync(String topicName, String subscriptionName) {
         return CompletableFuture.supplyAsync(() -> {
@@ -1080,6 +1083,74 @@ public class ServiceBusService {
                 
             } catch (Exception e) {
                 logError(String.format("Erro ao criar subscription '%s' no tópico '%s'", 
+                    subscriptionName, topicName), e);
+                return CreateQueueResult.ERROR;
+            }
+        }, executorService);
+    }
+    
+    /**
+     * Cria uma nova subscription em um tópico COM rule customizada (não cria $Default)
+     */
+    public CompletableFuture<CreateQueueResult> createSubscriptionWithRuleAsync(
+            String topicName, String subscriptionName, String ruleName, 
+            String filterType, String sqlExpression,
+            String correlationId, String messageId, String sessionId,
+            String replyTo, String label, String contentType) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (!isConnected()) {
+                throw new IllegalStateException("Não conectado ao Service Bus");
+            }
+            
+            try {
+                CreateSubscriptionOptions subscriptionOptions = new CreateSubscriptionOptions();
+                CreateRuleOptions ruleOptions = new CreateRuleOptions();
+                
+                // Configurar filtro baseado no tipo
+                if ("SQL Filter".equals(filterType)) {
+                    ruleOptions.setFilter(new SqlRuleFilter(sqlExpression));
+                } else if ("Correlation Filter".equals(filterType)) {
+                    CorrelationRuleFilter correlationFilter = new CorrelationRuleFilter();
+                    
+                    if (correlationId != null && !correlationId.isEmpty()) {
+                        correlationFilter.setCorrelationId(correlationId);
+                    }
+                    if (messageId != null && !messageId.isEmpty()) {
+                        correlationFilter.setMessageId(messageId);
+                    }
+                    if (sessionId != null && !sessionId.isEmpty()) {
+                        correlationFilter.setSessionId(sessionId);
+                    }
+                    if (replyTo != null && !replyTo.isEmpty()) {
+                        correlationFilter.setReplyTo(replyTo);
+                    }
+                    if (label != null && !label.isEmpty()) {
+                        correlationFilter.setLabel(label);
+                    }
+                    if (contentType != null && !contentType.isEmpty()) {
+                        correlationFilter.setContentType(contentType);
+                    }
+                    
+                    ruleOptions.setFilter(correlationFilter);
+                } else {
+                    throw new IllegalArgumentException("Tipo de filtro inválido: " + filterType);
+                }
+                
+                // Criar subscription COM a rule customizada (não cria $Default)
+                adminClient.createSubscription(topicName, subscriptionName, ruleName, subscriptionOptions, ruleOptions);
+                
+                logMessage(String.format(
+                    "Subscription '%s' criada com sucesso no tópico '%s' com rule customizada '%s' (tipo: %s)", 
+                    subscriptionName, topicName, ruleName, filterType));
+                return CreateQueueResult.CREATED;
+                
+            } catch (com.azure.core.exception.ResourceExistsException e) {
+                logMessage(String.format("Subscription '%s' já existe no tópico '%s'", 
+                    subscriptionName, topicName));
+                return CreateQueueResult.ALREADY_EXISTS;
+                
+            } catch (Exception e) {
+                logError(String.format("Erro ao criar subscription '%s' com rule no tópico '%s'", 
                     subscriptionName, topicName), e);
                 return CreateQueueResult.ERROR;
             }

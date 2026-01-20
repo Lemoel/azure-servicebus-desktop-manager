@@ -223,18 +223,14 @@ public class RulesDialogController implements Initializable {
         newRuleButton.setOnAction(e -> switchToCreateMode());
         cancelEditButton.setOnAction(e -> switchToCreateMode());
         
-        // Listener para seleção na tabela
+        // Listener para seleção na tabela - prevenir seleção de $Default
         rulesTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
-            if (newSelection != null) {
-                if (newSelection.getIsDefault()) {
-                    // Se for $Default, apenas limpar seleção e não entrar em modo edição
-                    Platform.runLater(() -> {
-                        rulesTable.getSelectionModel().clearSelection();
-                    });
-                } else {
-                    // Se não for $Default, entrar em modo edição
-                    switchToEditMode(newSelection);
-                }
+            if (newSelection != null && newSelection.getIsDefault()) {
+                // Se for $Default, prevenir a seleção
+                rulesTable.getSelectionModel().clearSelection();
+            } else if (newSelection != null) {
+                // Se não for $Default, entrar em modo edição
+                switchToEditMode(newSelection);
             }
         });
     }
@@ -473,6 +469,16 @@ public class RulesDialogController implements Initializable {
         // Validações
         if (ruleName.isEmpty()) {
             showAlert("Erro", "Digite um nome para a rule", Alert.AlertType.ERROR);
+            return;
+        }
+        
+        // Prevenir criação de rule com nome reservado $Default
+        if (ruleName.equalsIgnoreCase("$Default")) {
+            showAlert("Erro", 
+                "O nome '$Default' é reservado pelo Azure Service Bus.\n\n" +
+                "Use um nome diferente para a rule.\n" +
+                "A rule '$Default' é criada automaticamente com novas subscriptions.", 
+                Alert.AlertType.ERROR);
             return;
         }
         

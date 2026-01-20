@@ -110,6 +110,13 @@
                                           <TableColumn fx:id="sizeColumn" prefWidth="80.0" text="Tamanho (KB)" />
                                           <TableColumn fx:id="lockDurationColumn" prefWidth="100.0" text="Lock Duration" />
                                           <TableColumn fx:id="maxDeliveryCountColumn" prefWidth="100.0" text="Max Delivery" />
+                                          <TableColumn fx:id="deadLetteringColumn" prefWidth="90.0" text="Dead Letter" />
+                                          <TableColumn fx:id="batchedOpsColumn" prefWidth="90.0" text="Batched Ops" />
+                                          <TableColumn fx:id="duplicateDetectionColumn" prefWidth="90.0" text="Dup Detect" />
+                                          <TableColumn fx:id="sessionColumn" prefWidth="80.0" text="Session" />
+                                          <TableColumn fx:id="partitioningColumn" prefWidth="90.0" text="Partitioning" />
+                                          <TableColumn fx:id="maxSizeColumn" prefWidth="80.0" text="Max Size" />
+                                          <TableColumn fx:id="defaultTTLColumn" prefWidth="100.0" text="Default TTL" />
                                           <TableColumn fx:id="actionsColumn" prefWidth="100.0" text="Ações" sortable="false" />
                                        </columns>
                                     </TableView>
