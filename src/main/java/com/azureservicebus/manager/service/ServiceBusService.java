@@ -1226,6 +1226,221 @@ public class ServiceBusService {
         }, executorService);
     }
     
+    // ===========================================================================================
+    // MÉTODOS PARA RULES (REGRAS DE SUBSCRIPTIONS)
+    // ===========================================================================================
+    
+    /**
+     * Lista as rules de uma subscription
+     */
+    public CompletableFuture<ObservableList<com.azureservicebus.manager.model.RuleInfo>> listRulesAsync(
+            String topicName, String subscriptionName) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (!isConnected()) {
+                throw new IllegalStateException("Não conectado ao Service Bus");
+            }
+            
+            try {
+                List<com.azureservicebus.manager.model.RuleInfo> rules = new ArrayList<>();
+                
+                adminClient.listRules(topicName, subscriptionName).forEach(ruleProperties -> {
+                    com.azureservicebus.manager.model.RuleInfo ruleInfo = 
+                        new com.azureservicebus.manager.model.RuleInfo();
+                    
+                    ruleInfo.setName(ruleProperties.getName());
+                    
+                    // Determinar tipo de filtro e expressão
+                    RuleFilter filter = ruleProperties.getFilter();
+                    if (filter != null) {
+                        String filterType = filter.getClass().getSimpleName();
+                        ruleInfo.setFilterType(filterType);
+                        
+                        if (filter instanceof SqlRuleFilter) {
+                            SqlRuleFilter sqlFilter = (SqlRuleFilter) filter;
+                            ruleInfo.setFilterExpression(sqlFilter.getSqlExpression());
+                        } else if (filter instanceof CorrelationRuleFilter) {
+                            CorrelationRuleFilter corrFilter = (CorrelationRuleFilter) filter;
+                            // Montar descrição do correlation filter
+                            StringBuilder expr = new StringBuilder();
+                            if (corrFilter.getCorrelationId() != null && !corrFilter.getCorrelationId().isEmpty()) {
+                                expr.append("CorrelationId='").append(corrFilter.getCorrelationId()).append("' ");
+                            }
+                            if (corrFilter.getMessageId() != null && !corrFilter.getMessageId().isEmpty()) {
+                                expr.append("MessageId='").append(corrFilter.getMessageId()).append("' ");
+                            }
+                            if (corrFilter.getTo() != null && !corrFilter.getTo().isEmpty()) {
+                                expr.append("To='").append(corrFilter.getTo()).append("' ");
+                            }
+                            if (corrFilter.getReplyTo() != null && !corrFilter.getReplyTo().isEmpty()) {
+                                expr.append("ReplyTo='").append(corrFilter.getReplyTo()).append("' ");
+                            }
+                            if (corrFilter.getLabel() != null && !corrFilter.getLabel().isEmpty()) {
+                                expr.append("Label='").append(corrFilter.getLabel()).append("' ");
+                            }
+                            if (corrFilter.getSessionId() != null && !corrFilter.getSessionId().isEmpty()) {
+                                expr.append("SessionId='").append(corrFilter.getSessionId()).append("' ");
+                            }
+                            if (corrFilter.getReplyToSessionId() != null && !corrFilter.getReplyToSessionId().isEmpty()) {
+                                expr.append("ReplyToSessionId='").append(corrFilter.getReplyToSessionId()).append("' ");
+                            }
+                            if (corrFilter.getContentType() != null && !corrFilter.getContentType().isEmpty()) {
+                                expr.append("ContentType='").append(corrFilter.getContentType()).append("' ");
+                            }
+                            
+                            String expression = expr.toString().trim();
+                            ruleInfo.setFilterExpression(expression.isEmpty() ? "Correlation Filter" : expression);
+                        } else if (filter instanceof TrueRuleFilter) {
+                            ruleInfo.setFilterExpression("1=1 (aceita todas as mensagens)");
+                        } else if (filter instanceof FalseRuleFilter) {
+                            ruleInfo.setFilterExpression("1=0 (rejeita todas as mensagens)");
+                        } else {
+                            ruleInfo.setFilterExpression(filterType);
+                        }
+                    }
+                    
+                    // Ação da rule (opcional)
+                    RuleAction action = ruleProperties.getAction();
+                    if (action instanceof SqlRuleAction) {
+                        SqlRuleAction sqlAction = (SqlRuleAction) action;
+                        ruleInfo.setActionExpression(sqlAction.getSqlExpression());
+                    }
+                    
+                    rules.add(ruleInfo);
+                });
+                
+                rules.sort((r1, r2) -> {
+                    // $Default sempre primeiro
+                    if (r1.getName().equals("$Default")) return -1;
+                    if (r2.getName().equals("$Default")) return 1;
+                    return r1.getName().compareToIgnoreCase(r2.getName());
+                });
+                
+                logMessage(String.format("Carregadas %d rules da subscription '%s/%s'", 
+                    rules.size(), topicName, subscriptionName));
+                return FXCollections.observableArrayList(rules);
+                
+            } catch (Exception e) {
+                logError(String.format("Erro ao listar rules da subscription '%s/%s'", 
+                    topicName, subscriptionName), e);
+                throw new RuntimeException("Erro ao listar rules", e);
+            }
+        }, executorService);
+    }
+    
+    /**
+     * Cria uma rule com SQL Filter
+     */
+    public CompletableFuture<Boolean> createSqlRuleAsync(
+            String topicName, String subscriptionName, String ruleName, String sqlExpression) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (!isConnected()) {
+                throw new IllegalStateException("Não conectado ao Service Bus");
+            }
+            
+            try {
+                CreateRuleOptions ruleOptions = new CreateRuleOptions();
+                ruleOptions.setFilter(new SqlRuleFilter(sqlExpression));
+                
+                adminClient.createRule(topicName, subscriptionName, ruleName, ruleOptions);
+                
+                logMessage(String.format("Rule '%s' criada com SQL Filter na subscription '%s/%s': %s", 
+                    ruleName, topicName, subscriptionName, sqlExpression));
+                return true;
+                
+            } catch (com.azure.core.exception.ResourceExistsException e) {
+                logMessage(String.format("Rule '%s' já existe na subscription '%s/%s'", 
+                    ruleName, topicName, subscriptionName));
+                return false;
+                
+            } catch (Exception e) {
+                logError(String.format("Erro ao criar rule '%s' na subscription '%s/%s'", 
+                    ruleName, topicName, subscriptionName), e);
+                throw new RuntimeException("Erro ao criar rule", e);
+            }
+        }, executorService);
+    }
+    
+    /**
+     * Cria uma rule com Correlation Filter
+     */
+    public CompletableFuture<Boolean> createCorrelationRuleAsync(
+            String topicName, String subscriptionName, String ruleName,
+            String correlationId, String messageId, String sessionId,
+            String replyTo, String label, String contentType) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (!isConnected()) {
+                throw new IllegalStateException("Não conectado ao Service Bus");
+            }
+            
+            try {
+                CorrelationRuleFilter correlationFilter = new CorrelationRuleFilter();
+                
+                // Definir propriedades apenas se não forem vazias
+                if (correlationId != null && !correlationId.isEmpty()) {
+                    correlationFilter.setCorrelationId(correlationId);
+                }
+                if (messageId != null && !messageId.isEmpty()) {
+                    correlationFilter.setMessageId(messageId);
+                }
+                if (sessionId != null && !sessionId.isEmpty()) {
+                    correlationFilter.setSessionId(sessionId);
+                }
+                if (replyTo != null && !replyTo.isEmpty()) {
+                    correlationFilter.setReplyTo(replyTo);
+                }
+                if (label != null && !label.isEmpty()) {
+                    correlationFilter.setLabel(label);
+                }
+                if (contentType != null && !contentType.isEmpty()) {
+                    correlationFilter.setContentType(contentType);
+                }
+                
+                CreateRuleOptions ruleOptions = new CreateRuleOptions();
+                ruleOptions.setFilter(correlationFilter);
+                
+                adminClient.createRule(topicName, subscriptionName, ruleName, ruleOptions);
+                
+                logMessage(String.format("Rule '%s' criada com Correlation Filter na subscription '%s/%s'", 
+                    ruleName, topicName, subscriptionName));
+                return true;
+                
+            } catch (com.azure.core.exception.ResourceExistsException e) {
+                logMessage(String.format("Rule '%s' já existe na subscription '%s/%s'", 
+                    ruleName, topicName, subscriptionName));
+                return false;
+                
+            } catch (Exception e) {
+                logError(String.format("Erro ao criar rule '%s' na subscription '%s/%s'", 
+                    ruleName, topicName, subscriptionName), e);
+                throw new RuntimeException("Erro ao criar rule", e);
+            }
+        }, executorService);
+    }
+    
+    /**
+     * Remove uma rule de uma subscription
+     */
+    public CompletableFuture<Boolean> deleteRuleAsync(String topicName, String subscriptionName, String ruleName) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (!isConnected()) {
+                throw new IllegalStateException("Não conectado ao Service Bus");
+            }
+            
+            try {
+                adminClient.deleteRule(topicName, subscriptionName, ruleName);
+                
+                logMessage(String.format("Rule '%s' removida da subscription '%s/%s' com sucesso", 
+                    ruleName, topicName, subscriptionName));
+                return true;
+                
+            } catch (Exception e) {
+                logError(String.format("Erro ao remover rule '%s' da subscription '%s/%s'", 
+                    ruleName, topicName, subscriptionName), e);
+                throw new RuntimeException("Erro ao remover rule", e);
+            }
+        }, executorService);
+    }
+    
     /**
      * Encerra o serviço e libera recursos
      */

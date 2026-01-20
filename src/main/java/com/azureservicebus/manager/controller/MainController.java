@@ -281,6 +281,9 @@ public class MainController implements Initializable {
         subscriptionActiveMessagesColumn.setCellValueFactory(new PropertyValueFactory<>("activeMessages"));
         subscriptionDeadLetterMessagesColumn.setCellValueFactory(new PropertyValueFactory<>("deadLetterMessages"));
         
+        // Configurar coluna de ações para subscriptions
+        setupSubscriptionActionsColumn();
+        
         // Colunas da tabela de mensagens de tópicos
         topicSequenceNumberColumn.setCellValueFactory(new PropertyValueFactory<>("sequenceNumber"));
         topicMessageIdColumn.setCellValueFactory(new PropertyValueFactory<>("messageId"));
@@ -402,6 +405,77 @@ public class MainController implements Initializable {
                         deleteButton.setOnAction(event -> {
                             MessageInfo messageInfo = getTableView().getItems().get(getIndex());
                             handleDeleteMessageFromTable(messageInfo);
+                        });
+                    }
+                    
+                    @Override
+                    protected void updateItem(Void item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (empty) {
+                            setGraphic(null);
+                        } else {
+                            setGraphic(actionBox);
+                        }
+                    }
+                };
+            }
+        });
+    }
+    
+    private void setupSubscriptionActionsColumn() {
+        subscriptionActionsColumn.setCellFactory(new Callback<TableColumn<SubscriptionInfo, Void>, TableCell<SubscriptionInfo, Void>>() {
+            @Override
+            public TableCell<SubscriptionInfo, Void> call(TableColumn<SubscriptionInfo, Void> param) {
+                return new TableCell<SubscriptionInfo, Void>() {
+                    private final Button rulesButton = new Button("📜");
+                    private final Button deleteButton = new Button("✖");
+                    private final Button clearButton = new Button("⚠");
+                    private final HBox actionBox = new HBox(5);
+                    
+                    {
+                        rulesButton.setStyle(
+                            "-fx-background-color: #6f42c1; " +
+                            "-fx-text-fill: white; " +
+                            "-fx-font-size: 12px; " +
+                            "-fx-padding: 3 6 3 6; " +
+                            "-fx-cursor: hand;"
+                        );
+                        rulesButton.setTooltip(new Tooltip("Gerenciar Rules"));
+                        
+                        deleteButton.setStyle(
+                            "-fx-background-color: #dc3545; " +
+                            "-fx-text-fill: white; " +
+                            "-fx-font-size: 12px; " +
+                            "-fx-padding: 3 6 3 6; " +
+                            "-fx-cursor: hand;"
+                        );
+                        deleteButton.setTooltip(new Tooltip("Remover subscription"));
+                        
+                        clearButton.setStyle(
+                            "-fx-background-color: #ffc107; " +
+                            "-fx-text-fill: black; " +
+                            "-fx-font-size: 12px; " +
+                            "-fx-padding: 3 6 3 6; " +
+                            "-fx-cursor: hand;"
+                        );
+                        clearButton.setTooltip(new Tooltip("Limpar mensagens"));
+                        
+                        actionBox.setAlignment(Pos.CENTER);
+                        actionBox.getChildren().addAll(rulesButton, deleteButton, clearButton);
+                        
+                        rulesButton.setOnAction(event -> {
+                            SubscriptionInfo subInfo = getTableView().getItems().get(getIndex());
+                            handleManageRules(subInfo);
+                        });
+                        
+                        deleteButton.setOnAction(event -> {
+                            SubscriptionInfo subInfo = getTableView().getItems().get(getIndex());
+                            handleDeleteSubscription(subInfo);
+                        });
+                        
+                        clearButton.setOnAction(event -> {
+                            SubscriptionInfo subInfo = getTableView().getItems().get(getIndex());
+                            handleClearSubscriptionMessages(subInfo);
                         });
                     }
                     
@@ -1857,6 +1931,102 @@ public class MainController implements Initializable {
         };
         
         new Thread(sendTask).start();
+    }
+    
+    private void handleManageRules(SubscriptionInfo subInfo) {
+        try {
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                getClass().getResource("/fxml/rules-dialog.fxml")
+            );
+            
+            DialogPane dialogPane = loader.load();
+            RulesDialogController dialogController = loader.getController();
+            
+            dialogController.setSubscriptionInfo(subInfo.getTopicName(), subInfo.getName(), serviceBusService);
+            dialogController.setDialogPane(dialogPane);
+            
+            Dialog<ButtonType> dialog = new Dialog<>();
+            dialog.setDialogPane(dialogPane);
+            dialog.setTitle("Gerenciar Rules - " + subInfo.getTopicName() + "/" + subInfo.getName());
+            
+            dialogPane.getButtonTypes().setAll(ButtonType.CLOSE);
+            
+            dialog.showAndWait();
+            
+        } catch (Exception e) {
+            logger.error("Erro ao abrir diálogo de rules", e);
+            showAlert("Erro", "Erro ao abrir diálogo: " + e.getMessage(), Alert.AlertType.ERROR);
+        }
+    }
+    
+    private void handleDeleteSubscription(SubscriptionInfo subInfo) {
+        Optional<ButtonType> result = showConfirmation(
+            "Confirmar Remoção",
+            String.format("Tem certeza que deseja remover a subscription '%s' do tópico '%s'?\n\nEsta operação é irreversível!", 
+                subInfo.getName(), subInfo.getTopicName())
+        );
+        
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            Task<Boolean> deleteTask = new Task<Boolean>() {
+                @Override
+                protected Boolean call() throws Exception {
+                    return serviceBusService.deleteSubscriptionAsync(subInfo.getTopicName(), subInfo.getName()).get();
+                }
+                
+                @Override
+                protected void succeeded() {
+                    Platform.runLater(() -> {
+                        if (getValue()) {
+                            addLogMessage(String.format("Subscription '%s' removida com sucesso!", subInfo.getName()));
+                            handleLoadSubscriptions();
+                        }
+                    });
+                }
+                
+                @Override
+                protected void failed() {
+                    Platform.runLater(() -> {
+                        showAlert("Erro", "Erro ao remover subscription: " + getException().getMessage(), Alert.AlertType.ERROR);
+                    });
+                }
+            };
+            
+            new Thread(deleteTask).start();
+        }
+    }
+    
+    private void handleClearSubscriptionMessages(SubscriptionInfo subInfo) {
+        Optional<ButtonType> result = showConfirmation(
+            "Confirmar Limpeza",
+            String.format("Tem certeza que deseja limpar TODAS as mensagens da subscription '%s'?\n\nEsta operação é irreversível!", 
+                subInfo.getName())
+        );
+        
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            Task<Integer> clearTask = new Task<Integer>() {
+                @Override
+                protected Integer call() throws Exception {
+                    return serviceBusService.clearSubscriptionMessagesAsync(subInfo.getTopicName(), subInfo.getName()).get();
+                }
+                
+                @Override
+                protected void succeeded() {
+                    Platform.runLater(() -> {
+                        addLogMessage(String.format("%d mensagens removidas da subscription '%s'", getValue(), subInfo.getName()));
+                        handleLoadSubscriptions();
+                    });
+                }
+                
+                @Override
+                protected void failed() {
+                    Platform.runLater(() -> {
+                        showAlert("Erro", "Erro ao limpar mensagens: " + getException().getMessage(), Alert.AlertType.ERROR);
+                    });
+                }
+            };
+            
+            new Thread(clearTask).start();
+        }
     }
     
     private void loadSubscriptionsForTopic(String topicName) {
