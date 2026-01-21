@@ -70,16 +70,36 @@ public class SubscriptionDetailsDialogController {
         ruleTypeColumn.setCellValueFactory(new PropertyValueFactory<>("filterType"));
         ruleExpressionColumn.setCellValueFactory(new PropertyValueFactory<>("filterExpression"));
         
-        // Permitir quebra de linha na coluna de expressão
+        // Permitir quebra de linha na coluna de expressão com altura dinâmica
         ruleExpressionColumn.setCellFactory(tc -> {
-            TableCell<RuleInfo, String> cell = new TableCell<>();
-            Label label = new Label();
-            label.setWrapText(true);
-            label.setMaxWidth(380);
-            cell.setGraphic(label);
-            cell.setPrefHeight(Control.USE_COMPUTED_SIZE);
-            label.textProperty().bind(cell.itemProperty());
-            return cell;
+            return new TableCell<RuleInfo, String>() {
+                private final javafx.scene.text.Text text = new javafx.scene.text.Text();
+                
+                {
+                    text.wrappingWidthProperty().bind(ruleExpressionColumn.widthProperty().subtract(10));
+                    setGraphic(text);
+                }
+                
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    
+                    if (empty || item == null) {
+                        text.setText(null);
+                        setTooltip(null);
+                        setGraphic(null);
+                    } else {
+                        text.setText(item);
+                        setGraphic(text);
+                        
+                        // Adicionar Tooltip para visualização completa
+                        Tooltip tooltip = new Tooltip(item);
+                        tooltip.setWrapText(true);
+                        tooltip.setMaxWidth(600);
+                        setTooltip(tooltip);
+                    }
+                }
+            };
         });
         
         logger.info("SubscriptionDetailsDialogController inicializado com sucesso");

@@ -102,22 +102,13 @@
                                     <Label styleClass="subsection-title" text="Detalhes da Fila Selecionada" />
                                     <TableView fx:id="queueDetailsTable" prefHeight="200.0" VBox.vgrow="ALWAYS">
                                        <columns>
-                                          <TableColumn fx:id="queueNameColumn" prefWidth="120.0" text="Nome" />
-                                          <TableColumn fx:id="queueStatusColumn" prefWidth="80.0" text="Status" />
-                                          <TableColumn fx:id="totalMessagesColumn" prefWidth="80.0" text="Total Msgs" />
-                                          <TableColumn fx:id="activeMessagesColumn" prefWidth="80.0" text="Ativas" />
-                                          <TableColumn fx:id="deadLetterMessagesColumn" prefWidth="80.0" text="Mortas" />
-                                          <TableColumn fx:id="sizeColumn" prefWidth="80.0" text="Tamanho (KB)" />
-                                          <TableColumn fx:id="lockDurationColumn" prefWidth="100.0" text="Lock Duration" />
-                                          <TableColumn fx:id="maxDeliveryCountColumn" prefWidth="100.0" text="Max Delivery" />
-                                          <TableColumn fx:id="deadLetteringColumn" prefWidth="90.0" text="Dead Letter" />
-                                          <TableColumn fx:id="batchedOpsColumn" prefWidth="90.0" text="Batched Ops" />
-                                          <TableColumn fx:id="duplicateDetectionColumn" prefWidth="90.0" text="Dup Detect" />
-                                          <TableColumn fx:id="sessionColumn" prefWidth="80.0" text="Session" />
-                                          <TableColumn fx:id="partitioningColumn" prefWidth="90.0" text="Partitioning" />
-                                          <TableColumn fx:id="maxSizeColumn" prefWidth="80.0" text="Max Size" />
-                                          <TableColumn fx:id="defaultTTLColumn" prefWidth="100.0" text="Default TTL" />
-                                          <TableColumn fx:id="actionsColumn" prefWidth="100.0" text="Ações" sortable="false" />
+                                          <TableColumn fx:id="queueNameColumn" prefWidth="150.0" text="Nome" />
+                                          <TableColumn fx:id="queueStatusColumn" prefWidth="100.0" text="Status" />
+                                          <TableColumn fx:id="totalMessagesColumn" prefWidth="100.0" text="Total Msgs" />
+                                          <TableColumn fx:id="activeMessagesColumn" prefWidth="100.0" text="Ativas" />
+                                          <TableColumn fx:id="deadLetterMessagesColumn" prefWidth="100.0" text="Mortas" />
+                                          <TableColumn fx:id="sizeColumn" prefWidth="120.0" text="Tamanho (KB)" />
+                                          <TableColumn fx:id="actionsColumn" prefWidth="150.0" text="Ações" sortable="false" />
                                        </columns>
                                     </TableView>
                                  </VBox>
