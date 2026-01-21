@@ -6,6 +6,7 @@ import com.azureservicebus.manager.model.MessageInfo;
 import com.azureservicebus.manager.model.TopicInfo;
 import com.azureservicebus.manager.model.SubscriptionInfo;
 import com.azureservicebus.manager.service.ServiceBusService;
+import com.azureservicebus.manager.util.TableViewCopyUtil;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -178,6 +179,9 @@ public class MainController implements Initializable {
         setupInitialUI();
         setupTableColumns();
         setupEventHandlers();
+        
+        // Adicionar funcionalidade de cópia em todas as TableViews
+        setupCopyFunctionality();
         
         logger.info("MainController inicializado com sucesso");
     }
@@ -811,6 +815,28 @@ public class MainController implements Initializable {
         
         // Log
         clearLogButton.setOnAction(e -> logTextArea.clear());
+    }
+    
+    /**
+     * Adiciona funcionalidade de cópia (Context Menu + Ctrl+C) em todas as TableViews
+     */
+    private void setupCopyFunctionality() {
+        // Tabela de filas
+        TableViewCopyUtil.addCopyToClipboardSupport(queueDetailsTable);
+        
+        // Tabela de mensagens de filas
+        TableViewCopyUtil.addCopyToClipboardSupport(messagesTable);
+        
+        // Tabela de tópicos
+        TableViewCopyUtil.addCopyToClipboardSupport(topicDetailsTable);
+        
+        // Tabela de subscriptions
+        TableViewCopyUtil.addCopyToClipboardSupport(subscriptionsTable);
+        
+        // Tabela de mensagens de tópicos
+        TableViewCopyUtil.addCopyToClipboardSupport(topicMessagesTable);
+        
+        logger.info("Funcionalidade de cópia adicionada em todas as TableViews");
     }
     
     private void setupViewQueueComboBoxFilter() {

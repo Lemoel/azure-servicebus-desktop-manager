@@ -3,6 +3,7 @@ package com.azureservicebus.manager.controller;
 import com.azureservicebus.manager.model.RuleInfo;
 import com.azureservicebus.manager.model.SubscriptionInfo;
 import com.azureservicebus.manager.service.ServiceBusService;
+import com.azureservicebus.manager.util.TableViewCopyUtil;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -101,6 +102,9 @@ public class SubscriptionDetailsDialogController {
                 }
             };
         });
+        
+        // Adicionar funcionalidade de cópia na tabela de rules
+        TableViewCopyUtil.addCopyToClipboardSupport(rulesTable);
         
         logger.info("SubscriptionDetailsDialogController inicializado com sucesso");
     }

@@ -2,6 +2,7 @@ package com.azureservicebus.manager.controller;
 
 import com.azureservicebus.manager.model.RuleInfo;
 import com.azureservicebus.manager.service.ServiceBusService;
+import com.azureservicebus.manager.util.TableViewCopyUtil;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -76,6 +77,9 @@ public class RulesDialogController implements Initializable {
         setupTableColumns();
         setupFilterTypeComboBox();
         setupEventHandlers();
+        
+        // Adicionar funcionalidade de cópia na tabela de rules
+        TableViewCopyUtil.addCopyToClipboardSupport(rulesTable);
         
         logger.info("RulesDialogController inicializado com sucesso");
     }
