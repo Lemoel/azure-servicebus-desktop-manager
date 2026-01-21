@@ -322,12 +322,23 @@ public class MainController implements Initializable {
             @Override
             public TableCell<QueueInfo, Void> call(TableColumn<QueueInfo, Void> param) {
                 return new TableCell<QueueInfo, Void>() {
+                    private final Button infoButton = new Button("ℹ️");
                     private final Button deleteButton = new Button("✖");
                     private final Button clearButton = new Button("⚠");
                     private final Button refreshButton = new Button("↻");
                     private final HBox actionBox = new HBox(5);
                     
                     {
+                        // Configurar botão de informações
+                        infoButton.setStyle(
+                            "-fx-background-color: #007bff; " +
+                            "-fx-text-fill: white; " +
+                            "-fx-font-size: 12px; " +
+                            "-fx-padding: 3 6 3 6; " +
+                            "-fx-cursor: hand;"
+                        );
+                        infoButton.setTooltip(new Tooltip("Ver detalhes completos"));
+                        
                         // Configurar botão de deletar
                         deleteButton.setStyle(
                             "-fx-background-color: #dc3545; " +
@@ -360,9 +371,14 @@ public class MainController implements Initializable {
                         
                         // Configurar container
                         actionBox.setAlignment(Pos.CENTER);
-                        actionBox.getChildren().addAll(refreshButton, deleteButton, clearButton);
+                        actionBox.getChildren().addAll(infoButton, refreshButton, deleteButton, clearButton);
                         
                         // Event handlers
+                        infoButton.setOnAction(event -> {
+                            QueueInfo queueInfo = getTableView().getItems().get(getIndex());
+                            handleShowQueueDetails(queueInfo);
+                        });
+                        
                         deleteButton.setOnAction(event -> {
                             QueueInfo queueInfo = getTableView().getItems().get(getIndex());
                             handleDeleteQueueFromTable(queueInfo.getName());
@@ -442,12 +458,22 @@ public class MainController implements Initializable {
             @Override
             public TableCell<SubscriptionInfo, Void> call(TableColumn<SubscriptionInfo, Void> param) {
                 return new TableCell<SubscriptionInfo, Void>() {
+                    private final Button infoButton = new Button("ℹ️");
                     private final Button rulesButton = new Button("📜");
                     private final Button deleteButton = new Button("✖");
                     private final Button clearButton = new Button("⚠");
                     private final HBox actionBox = new HBox(5);
                     
                     {
+                        infoButton.setStyle(
+                            "-fx-background-color: #007bff; " +
+                            "-fx-text-fill: white; " +
+                            "-fx-font-size: 12px; " +
+                            "-fx-padding: 3 6 3 6; " +
+                            "-fx-cursor: hand;"
+                        );
+                        infoButton.setTooltip(new Tooltip("Ver detalhes completos"));
+                        
                         rulesButton.setStyle(
                             "-fx-background-color: #6f42c1; " +
                             "-fx-text-fill: white; " +
@@ -476,7 +502,12 @@ public class MainController implements Initializable {
                         clearButton.setTooltip(new Tooltip("Limpar mensagens"));
                         
                         actionBox.setAlignment(Pos.CENTER);
-                        actionBox.getChildren().addAll(rulesButton, deleteButton, clearButton);
+                        actionBox.getChildren().addAll(infoButton, rulesButton, deleteButton, clearButton);
+                        
+                        infoButton.setOnAction(event -> {
+                            SubscriptionInfo subInfo = getTableView().getItems().get(getIndex());
+                            handleShowSubscriptionDetails(subInfo);
+                        });
                         
                         rulesButton.setOnAction(event -> {
                             SubscriptionInfo subInfo = getTableView().getItems().get(getIndex());
@@ -2138,6 +2169,54 @@ public class MainController implements Initializable {
         };
         
         new Thread(sendTask).start();
+    }
+    
+    private void handleShowQueueDetails(QueueInfo queueInfo) {
+        try {
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                getClass().getResource("/fxml/queue-details-dialog.fxml")
+            );
+            
+            DialogPane dialogPane = loader.load();
+            QueueDetailsDialogController dialogController = loader.getController();
+            
+            dialogController.setQueue(queueInfo.getName(), serviceBusService);
+            
+            Dialog<ButtonType> dialog = new Dialog<>();
+            dialog.setDialogPane(dialogPane);
+            dialog.setTitle("Detalhes da Fila - " + queueInfo.getName());
+            dialog.setResizable(true);
+            
+            dialog.showAndWait();
+            
+        } catch (Exception e) {
+            logger.error("Erro ao abrir diálogo de detalhes da fila", e);
+            showAlert("Erro", "Erro ao abrir diálogo: " + e.getMessage(), Alert.AlertType.ERROR);
+        }
+    }
+    
+    private void handleShowSubscriptionDetails(SubscriptionInfo subInfo) {
+        try {
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                getClass().getResource("/fxml/subscription-details-dialog.fxml")
+            );
+            
+            DialogPane dialogPane = loader.load();
+            SubscriptionDetailsDialogController dialogController = loader.getController();
+            
+            dialogController.setSubscription(subInfo.getTopicName(), subInfo.getName(), serviceBusService);
+            
+            Dialog<ButtonType> dialog = new Dialog<>();
+            dialog.setDialogPane(dialogPane);
+            dialog.setTitle("Detalhes da Subscription - " + subInfo.getTopicName() + "/" + subInfo.getName());
+            dialog.setResizable(true);
+            
+            dialog.showAndWait();
+            
+        } catch (Exception e) {
+            logger.error("Erro ao abrir diálogo de detalhes", e);
+            showAlert("Erro", "Erro ao abrir diálogo: " + e.getMessage(), Alert.AlertType.ERROR);
+        }
     }
     
     private void handleManageRules(SubscriptionInfo subInfo) {

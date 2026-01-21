@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<DialogPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.azureservicebus.manager.controller.QueueDetailsDialogController"
+            prefWidth="700" prefHeight="600">
+    
+    <content>
+        <VBox spacing="10" styleClass="dialog-container">
+            <padding>
+                <Insets top="15" right="15" bottom="15" left="15"/>
+            </padding>
+            
+            <!-- Título -->
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label text="📋 Detalhes da Fila" styleClass="dialog-title">
+                    <font>
+                        <Font name="System Bold" size="16"/>
+                    </font>
+                </Label>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="queueNameLabel" text="queue-name" 
+                       style="-fx-text-fill: #007acc; -fx-font-weight: bold; -fx-font-size: 14px;"/>
+            </HBox>
+            
+            <Separator/>
+            
+            <!-- TabPane com 3 abas -->
+            <TabPane fx:id="detailsTabPane" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
+                
+                <!-- Aba 1: Propriedades Gerais -->
+                <Tab text="📊 Propriedades">
+                    <ScrollPane fitToWidth="true">
+                        <VBox spacing="15">
+                            <padding>
+                                <Insets top="15" right="15" bottom="15" left="15"/>
+                            </padding>
+                            
+                            <!-- Informações Básicas -->
+                            <VBox spacing="8" styleClass="section" 
+                                  style="-fx-background-color: #f9f9f9; -fx-padding: 15; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-radius: 5;">
+                                <Label text="Informações Básicas" styleClass="section-title">
+                                    <font>
+                                        <Font name="System Bold" size="13"/>
+                                    </font>
+                                </Label>
+                                
+                                <GridPane hgap="15" vgap="8">
+                                    <columnConstraints>
+                                        <ColumnConstraints percentWidth="30"/>
+                                        <ColumnConstraints percentWidth="70"/>
+                                    </columnConstraints>
+                                    
+                                    <Label text="Nome:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                                    <Label fx:id="nameLabel" text="-" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                                    
+                                    <Label text="Status:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                                    <Label fx:id="statusLabel" text="-" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                                    
+                                    <Label text="Tamanho:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                                    <Label fx:id="sizeLabel" text="-" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                                </GridPane>
+                            </VBox>
+                            
+                            <!-- Configurações de Entrega -->
+                            <VBox spacing="8" styleClass="section" 
+                                  style="-fx-background-color: #f9f9f9; -fx-padding: 15; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-radius: 5;">
+                                <Label text="Configurações de Entrega" styleClass="section-title">
+                                    <font>
+                                        <Font name="System Bold" size="13"/>
+                                    </font>
+                                </Label>
+                                
+                                <GridPane hgap="15" vgap="8">
+                                    <columnConstraints>
+                                        <ColumnConstraints percentWidth="30"/>
+                                        <ColumnConstraints percentWidth="70"/>
+                                    </columnConstraints>
+                                    
+                                    <Label text="Max Delivery Count:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                                    <Label fx:id="maxDeliveryLabel" text="-" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                                    
+                                    <Label text="Lock Duration:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                                    <Label fx:id="lockDurationLabel" text="-" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                                    
+                                    <Label text="Default Message TTL:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                                    <Label fx:id="defaultTTLLabel" text="-" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                                    
+                                    <Label text="Max Size:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                                    <Label fx:id="maxSizeLabel" text="-" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+                                </GridPane>
+                            </VBox>
+                            
+                            <!-- Funcionalidades -->
+                            <VBox spacing="8" styleClass="section" 
+                                  style="-fx-background-color: #f9f9f9; -fx-padding: 15; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-radius: 5;">
+                                <Label text="Funcionalidades" styleClass="section-title">
+                                    <font>
+                                        <Font name="System Bold" size="13"/>
+                                    </font>
+                                </Label>
+                                
+                                <GridPane hgap="15" vgap="8">
+                                    <columnConstraints>
+                                        <ColumnConstraints percentWidth="30"/>
+                                        <ColumnConstraints percentWidth="70"/>
+                                    </columnConstraints>
+                                    
+                                    <Label text="Dead Letter on Expiration:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                                    <Label fx:id="deadLetterExpirationLabel" text="-" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                                    
+                                    <Label text="Batched Operations:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                                    <Label fx:id="batchedOpsLabel" text="-" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                                    
+                                    <Label text="Duplicate Detection:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                                    <Label fx:id="duplicateDetectionLabel" text="-" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                                    
+                                    <Label text="Session Required:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                                    <Label fx:id="sessionLabel" text="-" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+                                    
+                                    <Label text="Partitioning:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+                                    <Label fx:id="partitioningLabel" text="-" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+                                </GridPane>
+                            </VBox>
+                            
+                            <!-- Timestamps -->
+                            <VBox spacing="8" styleClass="section" 
+                                  style="-fx-background-color: #f9f9f9; -fx-padding: 15; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-radius: 5;">
+                                <Label text="Informações Temporais" styleClass="section-title">
+                                    <font>
+                                        <Font name="System Bold" size="13"/>
+                                    </font>
+                                </Label>
+                                
+                                <GridPane hgap="15" vgap="8">
+                                    <columnConstraints>
+                                        <ColumnConstraints percentWidth="30"/>
+                                        <ColumnConstraints percentWidth="70"/>
+                                    </columnConstraints>
+                                    
+                                    <Label text="Criada em:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                                    <Label fx:id="createdAtLabel" text="-" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                                    
+                                    <Label text="Atualizada em:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                                    <Label fx:id="updatedAtLabel" text="-" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                                </GridPane>
+                            </VBox>
+                        </VBox>
+                    </ScrollPane>
+                </Tab>
+                
+                <!-- Aba 2: Métricas -->
+                <Tab text="📈 Métricas">
+                    <VBox spacing="15">
+                        <padding>
+                            <Insets top="15" right="15" bottom="15" left="15"/>
+                        </padding>
+                        
+                        <!-- Mensagens -->
+                        <VBox spacing="8" styleClass="section" 
+                              style="-fx-background-color: #f9f9f9; -fx-padding: 15; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-radius: 5;">
+                            <Label text="Contadores de Mensagens" styleClass="section-title">
+                                <font>
+                                    <Font name="System Bold" size="13"/>
+                                </font>
+                            </Label>
+                            
+                            <GridPane hgap="15" vgap="10">
+                                <columnConstraints>
+                                    <ColumnConstraints percentWidth="40"/>
+                                    <ColumnConstraints percentWidth="60"/>
+                                </columnConstraints>
+                                
+                                <Label text="Total de Mensagens:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                                <Label fx:id="totalMessagesLabel" text="-" style="-fx-font-size: 14px;" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                                
+                                <Label text="Mensagens Ativas:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                                <Label fx:id="activeMessagesLabel" text="-" style="-fx-font-size: 14px; -fx-text-fill: #28a745;" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                                
+                                <Label text="Mensagens Mortas (Dead Letter):" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                                <Label fx:id="deadLetterMessagesLabel" text="-" style="-fx-font-size: 14px; -fx-text-fill: #dc3545;" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                                
+                                <Label text="Mensagens Agendadas:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                                <Label fx:id="scheduledMessagesLabel" text="-" style="-fx-font-size: 14px;" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+                            </GridPane>
+                        </VBox>
+                        
+                        <!-- Gráfico de Status (placeholder) -->
+                        <VBox spacing="8" styleClass="section" 
+                              style="-fx-background-color: #f0f8ff; -fx-padding: 15; -fx-border-color: #007acc; -fx-border-width: 2; -fx-border-radius: 5; -fx-background-radius: 5;">
+                            <Label text="📊 Resumo do Status" styleClass="section-title">
+                                <font>
+                                    <Font name="System Bold" size="13"/>
+                                </font>
+                            </Label>
+                            <Label fx:id="summaryLabel" text="Carregando..." wrapText="true" 
+                                   style="-fx-font-size: 12px; -fx-text-fill: #555;"/>
+                        </VBox>
+                    </VBox>
+                </Tab>
+                
+                <!-- Aba 3: Informações Adicionais -->
+                <Tab text="📜 Informações">
+                    <VBox spacing="15">
+                        <padding>
+                            <Insets top="15" right="15" bottom="15" left="15"/>
+                        </padding>
+                        
+                        <!-- Caminhos do Service Bus -->
+                        <VBox spacing="8" styleClass="section" 
+                              style="-fx-background-color: #f9f9f9; -fx-padding: 15; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-radius: 5;">
+                            <Label text="🔗 Caminhos do Service Bus" styleClass="section-title">
+                                <font>
+                                    <Font name="System Bold" size="13"/>
+                                </font>
+                            </Label>
+                            
+                            <GridPane hgap="15" vgap="8">
+                                <columnConstraints>
+                                    <ColumnConstraints percentWidth="30"/>
+                                    <ColumnConstraints percentWidth="70"/>
+                                </columnConstraints>
+                                
+                                <Label text="Caminho da Fila:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                                <Label fx:id="queuePathLabel" text="-" style="-fx-font-family: monospace;" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                                
+                                <Label text="Caminho DLQ:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                                <Label fx:id="dlqPathLabel" text="-" style="-fx-font-family: monospace;" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                                
+                                <Label text="Transfer DLQ:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                                <Label fx:id="transferDlqPathLabel" text="-" style="-fx-font-family: monospace;" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                            </GridPane>
+                        </VBox>
+                        
+                        <!-- Dicas de Uso -->
+                        <VBox spacing="8" styleClass="section" 
+                              style="-fx-background-color: #fff3cd; -fx-padding: 15; -fx-border-color: #ffc107; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-radius: 5;">
+                            <Label text="💡 Dicas de Uso" styleClass="section-title">
+                                <font>
+                                    <Font name="System Bold" size="13"/>
+                                </font>
+                            </Label>
+                            
+                            <VBox spacing="5">
+                                <Label text="• Dead Letter Queue (DLQ): Armazena mensagens que falharam após atingir o Max Delivery Count" 
+                                       wrapText="true" style="-fx-font-size: 11px;"/>
+                                <Label text="• Lock Duration: Tempo que uma mensagem fica bloqueada após ser lida" 
+                                       wrapText="true" style="-fx-font-size: 11px;"/>
+                                <Label text="• Batched Operations: Melhora performance ao processar múltiplas mensagens" 
+                                       wrapText="true" style="-fx-font-size: 11px;"/>
+                                <Label text="• Partitioning: Distribui mensagens entre múltiplos message brokers para maior throughput" 
+                                       wrapText="true" style="-fx-font-size: 11px;"/>
+                                <Label text="• Sessions: Permite processamento ordenado de mensagens relacionadas (FIFO)" 
+                                       wrapText="true" style="-fx-font-size: 11px;"/>
+                            </VBox>
+                        </VBox>
+                        
+                        <!-- Alertas sobre Configurações -->
+                        <VBox spacing="8" styleClass="section" 
+                              style="-fx-background-color: #f8d7da; -fx-padding: 15; -fx-border-color: #dc3545; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-radius: 5;">
+                            <Label text="⚠️ Atenção" styleClass="section-title">
+                                <font>
+                                    <Font name="System Bold" size="13"/>
+                                </font>
+                            </Label>
+                            
+                            <Label fx:id="warningLabel" text="Nenhum alerta no momento." 
+                                   wrapText="true" style="-fx-font-size: 11px;"/>
+                        </VBox>
+                    </VBox>
+                </Tab>
+                
+            </TabPane>
+        </VBox>
+    </content>
+    
+    <buttonTypes>
+        <ButtonType fx:constant="OK"/>
+    </buttonTypes>
+    
+</DialogPane>

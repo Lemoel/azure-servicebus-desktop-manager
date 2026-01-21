@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<DialogPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.azureservicebus.manager.controller.SubscriptionDetailsDialogController"
+            prefWidth="700" prefHeight="600">
+    
+    <content>
+        <VBox spacing="10" styleClass="dialog-container">
+            <padding>
+                <Insets top="15" right="15" bottom="15" left="15"/>
+            </padding>
+            
+            <!-- Título -->
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label text="📋 Detalhes da Subscription" styleClass="dialog-title">
+                    <font>
+                        <Font name="System Bold" size="16"/>
+                    </font>
+                </Label>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="subscriptionNameLabel" text="subscription-name" 
+                       style="-fx-text-fill: #007acc; -fx-font-weight: bold; -fx-font-size: 14px;"/>
+            </HBox>
+            
+            <Separator/>
+            
+            <!-- TabPane com 3 abas -->
+            <TabPane fx:id="detailsTabPane" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
+                
+                <!-- Aba 1: Propriedades Gerais -->
+                <Tab text="📊 Propriedades">
+                    <ScrollPane fitToWidth="true">
+                        <VBox spacing="15">
+                            <padding>
+                                <Insets top="15" right="15" bottom="15" left="15"/>
+                            </padding>
+                            
+                            <!-- Informações Básicas -->
+                            <VBox spacing="8" styleClass="section" 
+                                  style="-fx-background-color: #f9f9f9; -fx-padding: 15; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-radius: 5;">
+                                <Label text="Informações Básicas" styleClass="section-title">
+                                    <font>
+                                        <Font name="System Bold" size="13"/>
+                                    </font>
+                                </Label>
+                                
+                                <GridPane hgap="15" vgap="8">
+                                    <columnConstraints>
+                                        <ColumnConstraints percentWidth="30"/>
+                                        <ColumnConstraints percentWidth="70"/>
+                                    </columnConstraints>
+                                    
+                                    <Label text="Nome:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                                    <Label fx:id="nameLabel" text="-" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                                    
+                                    <Label text="Tópico:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                                    <Label fx:id="topicLabel" text="-" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                                    
+                                    <Label text="Status:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                                    <Label fx:id="statusLabel" text="-" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                                </GridPane>
+                            </VBox>
+                            
+                            <!-- Configurações de Entrega -->
+                            <VBox spacing="8" styleClass="section" 
+                                  style="-fx-background-color: #f9f9f9; -fx-padding: 15; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-radius: 5;">
+                                <Label text="Configurações de Entrega" styleClass="section-title">
+                                    <font>
+                                        <Font name="System Bold" size="13"/>
+                                    </font>
+                                </Label>
+                                
+                                <GridPane hgap="15" vgap="8">
+                                    <columnConstraints>
+                                        <ColumnConstraints percentWidth="30"/>
+                                        <ColumnConstraints percentWidth="70"/>
+                                    </columnConstraints>
+                                    
+                                    <Label text="Max Delivery Count:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                                    <Label fx:id="maxDeliveryLabel" text="-" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                                    
+                                    <Label text="Lock Duration:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                                    <Label fx:id="lockDurationLabel" text="-" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                                    
+                                    <Label text="Default Message TTL:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                                    <Label fx:id="defaultTTLLabel" text="-" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                                    
+                                    <Label text="Auto Delete On Idle:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                                    <Label fx:id="autoDeleteLabel" text="-" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+                                </GridPane>
+                            </VBox>
+                            
+                            <!-- Funcionalidades -->
+                            <VBox spacing="8" styleClass="section" 
+                                  style="-fx-background-color: #f9f9f9; -fx-padding: 15; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-radius: 5;">
+                                <Label text="Funcionalidades" styleClass="section-title">
+                                    <font>
+                                        <Font name="System Bold" size="13"/>
+                                    </font>
+                                </Label>
+                                
+                                <GridPane hgap="15" vgap="8">
+                                    <columnConstraints>
+                                        <ColumnConstraints percentWidth="30"/>
+                                        <ColumnConstraints percentWidth="70"/>
+                                    </columnConstraints>
+                                    
+                                    <Label text="Session Required:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                                    <Label fx:id="sessionLabel" text="-" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                                    
+                                    <Label text="Dead Lettering on Expiration:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                                    <Label fx:id="deadLetterExpirationLabel" text="-" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                                    
+                                    <Label text="Dead Lettering on Filter Error:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                                    <Label fx:id="deadLetterFilterLabel" text="-" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                                    
+                                    <Label text="Batched Operations:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                                    <Label fx:id="batchedOpsLabel" text="-" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+                                </GridPane>
+                            </VBox>
+                            
+                            <!-- Timestamps -->
+                            <VBox spacing="8" styleClass="section" 
+                                  style="-fx-background-color: #f9f9f9; -fx-padding: 15; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-radius: 5;">
+                                <Label text="Informações Temporais" styleClass="section-title">
+                                    <font>
+                                        <Font name="System Bold" size="13"/>
+                                    </font>
+                                </Label>
+                                
+                                <GridPane hgap="15" vgap="8">
+                                    <columnConstraints>
+                                        <ColumnConstraints percentWidth="30"/>
+                                        <ColumnConstraints percentWidth="70"/>
+                                    </columnConstraints>
+                                    
+                                    <Label text="Criada em:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                                    <Label fx:id="createdAtLabel" text="-" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                                    
+                                    <Label text="Atualizada em:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                                    <Label fx:id="updatedAtLabel" text="-" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                                    
+                                    <Label text="Último acesso:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                                    <Label fx:id="accessedAtLabel" text="-" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                                </GridPane>
+                            </VBox>
+                        </VBox>
+                    </ScrollPane>
+                </Tab>
+                
+                <!-- Aba 2: Métricas -->
+                <Tab text="📈 Métricas">
+                    <VBox spacing="15">
+                        <padding>
+                            <Insets top="15" right="15" bottom="15" left="15"/>
+                        </padding>
+                        
+                        <!-- Mensagens -->
+                        <VBox spacing="8" styleClass="section" 
+                              style="-fx-background-color: #f9f9f9; -fx-padding: 15; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-radius: 5;">
+                            <Label text="Contadores de Mensagens" styleClass="section-title">
+                                <font>
+                                    <Font name="System Bold" size="13"/>
+                                </font>
+                            </Label>
+                            
+                            <GridPane hgap="15" vgap="10">
+                                <columnConstraints>
+                                    <ColumnConstraints percentWidth="40"/>
+                                    <ColumnConstraints percentWidth="60"/>
+                                </columnConstraints>
+                                
+                                <Label text="Total de Mensagens:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                                <Label fx:id="totalMessagesLabel" text="-" style="-fx-font-size: 14px;" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                                
+                                <Label text="Mensagens Ativas:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                                <Label fx:id="activeMessagesLabel" text="-" style="-fx-font-size: 14px; -fx-text-fill: #28a745;" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                                
+                                <Label text="Mensagens Mortas (Dead Letter):" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                                <Label fx:id="deadLetterMessagesLabel" text="-" style="-fx-font-size: 14px; -fx-text-fill: #dc3545;" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                                
+                                <Label text="Mensagens Agendadas:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                                <Label fx:id="scheduledMessagesLabel" text="-" style="-fx-font-size: 14px;" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+                                
+                                <Label text="Mensagens de Transferência:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+                                <Label fx:id="transferMessagesLabel" text="-" style="-fx-font-size: 14px;" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+                                
+                                <Label text="Transfer Dead Letter:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
+                                <Label fx:id="transferDLQLabel" text="-" style="-fx-font-size: 14px;" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
+                            </GridPane>
+                        </VBox>
+                        
+                        <!-- Gráfico de Status (placeholder) -->
+                        <VBox spacing="8" styleClass="section" 
+                              style="-fx-background-color: #f0f8ff; -fx-padding: 15; -fx-border-color: #007acc; -fx-border-width: 2; -fx-border-radius: 5; -fx-background-radius: 5;">
+                            <Label text="📊 Resumo do Status" styleClass="section-title">
+                                <font>
+                                    <Font name="System Bold" size="13"/>
+                                </font>
+                            </Label>
+                            <Label fx:id="summaryLabel" text="Carregando..." wrapText="true" 
+                                   style="-fx-font-size: 12px; -fx-text-fill: #555;"/>
+                        </VBox>
+                    </VBox>
+                </Tab>
+                
+                <!-- Aba 3: Rules -->
+                <Tab text="📜 Rules">
+                    <VBox spacing="10">
+                        <padding>
+                            <Insets top="15" right="15" bottom="15" left="15"/>
+                        </padding>
+                        
+                        <HBox alignment="CENTER_LEFT" spacing="10">
+                            <Label text="Rules da Subscription" styleClass="section-title">
+                                <font>
+                                    <Font name="System Bold" size="13"/>
+                                </font>
+                            </Label>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Label fx:id="rulesCountLabel" text="0 rules" 
+                                   style="-fx-text-fill: #666; -fx-font-size: 11px;"/>
+                        </HBox>
+                        
+                        <TableView fx:id="rulesTable" VBox.vgrow="ALWAYS">
+                            <columns>
+                                <TableColumn fx:id="ruleNameColumn" text="Nome" prefWidth="150"/>
+                                <TableColumn fx:id="ruleTypeColumn" text="Tipo de Filtro" prefWidth="120"/>
+                                <TableColumn fx:id="ruleExpressionColumn" text="Expressão" prefWidth="400"/>
+                            </columns>
+                        </TableView>
+                        
+                        <HBox spacing="5" alignment="CENTER_LEFT" 
+                              style="-fx-background-color: #fff3cd; -fx-padding: 10; -fx-border-color: #ffc107; -fx-border-width: 1; -fx-border-radius: 5; -fx-background-radius: 5;">
+                            <Label text="💡" style="-fx-font-size: 14px;"/>
+                            <Label text="As rules determinam quais mensagens chegam a esta subscription. A rule '$Default' aceita todas as mensagens." 
+                                   wrapText="true" style="-fx-font-size: 10px;"/>
+                        </HBox>
+                    </VBox>
+                </Tab>
+                
+            </TabPane>
+        </VBox>
+    </content>
+    
+    <buttonTypes>
+        <ButtonType fx:constant="CLOSE"/>
+    </buttonTypes>
+    
+</DialogPane>
