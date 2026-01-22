@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<DialogPane xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" 
+            fx:controller="com.azureservicebus.manager.controller.ProfileManagerDialogController"
+            prefWidth="750.0" prefHeight="600.0">
+    
+    <content>
+        <VBox spacing="15.0">
+            <padding>
+                <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+            </padding>
+            
+            <!-- Título -->
+            <HBox alignment="CENTER_LEFT" spacing="10.0">
+                <Label text="⚙️ Gerenciar Perfis de Conexão" styleClass="dialog-title">
+                    <font>
+                        <Font name="System Bold" size="16.0" />
+                    </font>
+                </Label>
+            </HBox>
+            
+            <Separator />
+            
+            <!-- Lista de Perfis -->
+            <VBox spacing="8.0" VBox.vgrow="ALWAYS">
+                <HBox alignment="CENTER_LEFT" spacing="10.0">
+                    <Label text="📋 Perfis Cadastrados" styleClass="section-title">
+                        <font>
+                            <Font name="System Bold" size="13.0" />
+                        </font>
+                    </Label>
+                    <Region HBox.hgrow="ALWAYS" />
+                    <Label fx:id="profileCountLabel" text="0 perfis" styleClass="info-label">
+                        <font>
+                            <Font size="11.0" />
+                        </font>
+                    </Label>
+                </HBox>
+                
+                <TableView fx:id="profilesTable" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="activeColumn" prefWidth="50.0" text="Ativo" sortable="false" />
+                        <TableColumn fx:id="nameColumn" prefWidth="150.0" text="Nome do Perfil" />
+                        <TableColumn fx:id="namespaceColumn" prefWidth="200.0" text="Namespace" />
+                        <TableColumn fx:id="lastUsedColumn" prefWidth="150.0" text="Último Uso" />
+                        <TableColumn fx:id="actionsColumn" prefWidth="150.0" text="Ações" sortable="false" />
+                    </columns>
+                </TableView>
+            </VBox>
+            
+            <Separator />
+            
+            <!-- Formulário de Criação/Edição -->
+            <VBox spacing="10.0">
+                <HBox alignment="CENTER_LEFT" spacing="10.0">
+                    <Label fx:id="formTitleLabel" text="➕ Criar Novo Perfil" styleClass="section-title">
+                        <font>
+                            <Font name="System Bold" size="13.0" />
+                        </font>
+                    </Label>
+                    <Region HBox.hgrow="ALWAYS" />
+                    <Button fx:id="newProfileButton" text="➕ Novo Perfil" styleClass="secondary-button" 
+                            visible="false" managed="false" />
+                    <Button fx:id="cancelEditButton" text="❌ Cancelar Edição" styleClass="secondary-button" 
+                            visible="false" managed="false" />
+                </HBox>
+                
+                <GridPane hgap="10.0" vgap="10.0">
+                    <columnConstraints>
+                        <ColumnConstraints hgrow="NEVER" minWidth="120.0" />
+                        <ColumnConstraints hgrow="ALWAYS" />
+                    </columnConstraints>
+                    
+                    <!-- Nome do Perfil -->
+                    <Label text="Nome do Perfil:" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                        <font>
+                            <Font name="System Bold" size="11.0" />
+                        </font>
+                    </Label>
+                    <TextField fx:id="profileNameField" promptText="Ex: Desenvolvimento, Staging, Produção..." 
+                               GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                    
+                    <!-- Connection String -->
+                    <Label text="Connection String:" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                        <font>
+                            <Font name="System Bold" size="11.0" />
+                        </font>
+                    </Label>
+                    <TextArea fx:id="connectionStringTextArea" prefRowCount="3" wrapText="true"
+                              promptText="Endpoint=sb://[namespace].servicebus.windows.net/;SharedAccessKeyName=...;SharedAccessKey=..."
+                              GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                </GridPane>
+                
+                <HBox spacing="10.0" alignment="CENTER_LEFT">
+                    <Button fx:id="saveProfileButton" text="💾 Salvar Perfil" styleClass="success-button" />
+                    <Label fx:id="formStatusLabel" wrapText="true" visible="false" managed="false">
+                        <font>
+                            <Font size="11.0" />
+                        </font>
+                    </Label>
+                </HBox>
+            </VBox>
+            
+            <Separator />
+            
+            <!-- Informações Adicionais -->
+            <VBox spacing="5.0" styleClass="info-box">
+                <padding>
+                    <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+                </padding>
+                <Label text="💡 Dicas:" styleClass="info-title">
+                    <font>
+                        <Font name="System Bold" size="11.0" />
+                    </font>
+                </Label>
+                <Label text="• Clique no nome de um perfil para editá-lo" styleClass="info-text">
+                    <font>
+                        <Font size="10.0" />
+                    </font>
+                </Label>
+                <Label text="• O perfil marcado como 'Ativo' é usado para a conexão atual" styleClass="info-text">
+                    <font>
+                        <Font size="10.0" />
+                    </font>
+                </Label>
+                <Label text="• Você pode alternar entre perfis usando o seletor no header da aplicação" styleClass="info-text">
+                    <font>
+                        <Font size="10.0" />
+                    </font>
+                </Label>
+            </VBox>
+        </VBox>
+    </content>
+    
+    <buttonTypes>
+        <ButtonType fx:id="closeButtonType" text="Fechar" buttonData="CANCEL_CLOSE" />
+    </buttonTypes>
+    
+</DialogPane>

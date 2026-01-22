@@ -19,6 +19,15 @@
                </font>
             </Label>
             <Region HBox.hgrow="ALWAYS" />
+            <HBox spacing="10.0" alignment="CENTER_LEFT">
+               <Label text="📁 Perfil:" styleClass="profile-label">
+                  <font>
+                     <Font name="System Bold" size="12.0" />
+                  </font>
+               </Label>
+               <ComboBox fx:id="profileComboBox" prefWidth="150.0" promptText="Selecione..." />
+               <Button fx:id="manageProfilesButton" styleClass="secondary-button" text="⚙️" />
+            </HBox>
             <Label fx:id="connectionStatusLabel" styleClass="connection-status" text="❌ Desconectado" />
             <Label fx:id="namespaceLabel" styleClass="namespace-label" text="Namespace: N/A" />
             <Button fx:id="disconnectButton" styleClass="disconnect-button" text="Desconectar" />
@@ -27,30 +36,8 @@
    </top>
    
    <center>
-      <VBox>
-         <!-- Connection Pane -->
-         <VBox fx:id="connectionPane" styleClass="connection-pane">
-            <padding>
-               <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
-            </padding>
-            <Label styleClass="section-title" text="🔑 Configuração de Conexão">
-               <font>
-                  <Font name="System Bold" size="16.0" />
-               </font>
-            </Label>
-            <Label text="Connection String do Azure Service Bus:" />
-            <TextArea fx:id="connectionStringTextArea" prefRowCount="3" wrapText="true" />
-            <HBox alignment="CENTER_LEFT" spacing="10.0">
-               <padding>
-                  <Insets top="10.0" />
-               </padding>
-               <Button fx:id="connectButton" styleClass="primary-button" text="🔌 Conectar" />
-               <Label styleClass="help-text" text="Cole a connection string completa do Azure Service Bus" />
-            </HBox>
-         </VBox>
-         
-         <!-- Main Content -->
-         <TabPane fx:id="mainTabPane" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
+      <!-- Main Content -->
+      <TabPane fx:id="mainTabPane" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
             
             <!-- ============================================ -->
             <!-- FILAS - Tab Principal                         -->
@@ -422,7 +409,6 @@
             </Tab>
             
          </TabPane>
-      </VBox>
    </center>
    
    <bottom>

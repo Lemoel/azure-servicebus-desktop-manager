@@ -43,12 +43,13 @@ public class MainController implements Initializable {
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
     
     // Componentes da interface - Conexão
-    @FXML private VBox connectionPane;
-    @FXML private TextArea connectionStringTextArea;
-    @FXML private Button connectButton;
     @FXML private Button disconnectButton;
     @FXML private Label connectionStatusLabel;
     @FXML private Label namespaceLabel;
+    
+    // Componentes da interface - Perfis
+    @FXML private ComboBox<String> profileComboBox;
+    @FXML private Button manageProfilesButton;
     
     // Componentes da interface - Abas principais
     @FXML private TabPane mainTabPane;
@@ -148,8 +149,10 @@ public class MainController implements Initializable {
     
     // Serviços e dados
     private ServiceBusService serviceBusService;
+    private com.azureservicebus.manager.service.ProfileService profileService;
     private Stage primaryStage;
     private ObservableList<String> queueNames = FXCollections.observableArrayList();
+    private ObservableList<String> profileNames = FXCollections.observableArrayList();
     private ObservableList<QueueInfo> queueDetails = FXCollections.observableArrayList();
     private ObservableList<MessageInfo> messages = FXCollections.observableArrayList();
     
@@ -171,8 +174,9 @@ public class MainController implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         logger.info("Inicializando MainController");
         
-        // Inicializar serviço
+        // Inicializar serviços
         serviceBusService = new ServiceBusService();
+        profileService = com.azureservicebus.manager.service.ProfileService.getInstance();
         setupServiceCallbacks();
         
         // Configurar interface inicial
@@ -182,6 +186,9 @@ public class MainController implements Initializable {
         
         // Adicionar funcionalidade de cópia em todas as TableViews
         setupCopyFunctionality();
+        
+        // Configurar sistema de perfis
+        setupProfileSystem();
         
         logger.info("MainController inicializado com sucesso");
     }
@@ -221,12 +228,6 @@ public class MainController implements Initializable {
         
         // Configurar tabelas de mensagens de tópicos
         topicMessagesTable.setItems(topicMessages);
-        
-        // Placeholder para connection string
-        connectionStringTextArea.setPromptText(
-            "Cole aqui a connection string do Azure Service Bus:\n" +
-            "Endpoint=sb://your-namespace.servicebus.windows.net/;SharedAccessKeyName=...;SharedAccessKey=..."
-        );
         
         // Placeholder para mensagem
         messageBodyTextArea.setPromptText(
@@ -748,7 +749,6 @@ public class MainController implements Initializable {
     
     private void setupEventHandlers() {
         // Conexão
-        connectButton.setOnAction(e -> handleConnect());
         disconnectButton.setOnAction(e -> handleDisconnect());
         
         // Filas
@@ -839,6 +839,127 @@ public class MainController implements Initializable {
         logger.info("Funcionalidade de cópia adicionada em todas as TableViews");
     }
     
+    /**
+     * Configura o sistema de perfis
+     */
+    private void setupProfileSystem() {
+        // Configurar ComboBox de perfis
+        if (profileComboBox != null) {
+            profileComboBox.setItems(profileNames);
+            loadProfiles();
+            
+            // Event handler para mudança de perfil
+            profileComboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal != null && !newVal.isEmpty()) {
+                    handleProfileSelection(newVal);
+                }
+            });
+        }
+        
+        // Event handler para gerenciar perfis
+        if (manageProfilesButton != null) {
+            manageProfilesButton.setOnAction(e -> handleManageProfiles());
+        }
+        
+        logger.info("Sistema de perfis configurado");
+    }
+    
+    private void loadProfiles() {
+        profileNames.clear();
+        
+        // Obter todos os perfis e extrair os nomes
+        List<com.azureservicebus.manager.model.ConnectionProfile> allProfiles = profileService.getAllProfiles();
+        for (com.azureservicebus.manager.model.ConnectionProfile profile : allProfiles) {
+            profileNames.add(profile.getName());
+        }
+        
+        // Selecionar perfil ativo se houver
+        String activeProfile = profileService.getActiveProfileName();
+        if (activeProfile != null && profileNames.contains(activeProfile)) {
+            profileComboBox.setValue(activeProfile);
+        }
+    }
+    
+    private void handleProfileSelection(String profileName) {
+        try {
+            Optional<com.azureservicebus.manager.model.ConnectionProfile> profileOpt = profileService.getProfile(profileName);
+            if (profileOpt.isPresent()) {
+                com.azureservicebus.manager.model.ConnectionProfile profile = profileOpt.get();
+                
+                // Desconectar da conexão anterior se estiver conectado
+                if (serviceBusService.isConnected()) {
+                    serviceBusService.disconnect();
+                    addLogMessage("Desconectado do perfil anterior");
+                }
+                
+                // Definir como perfil ativo
+                profileService.setActiveProfile(profileName);
+                
+                // Conectar automaticamente com a nova connection string
+                String connectionString = profile.getConnectionString();
+                addLogMessage(String.format("Conectando ao perfil '%s'...", profileName));
+                
+                Task<Boolean> connectTask = new Task<Boolean>() {
+                    @Override
+                    protected Boolean call() throws Exception {
+                        return serviceBusService.connectAsync(connectionString).get();
+                    }
+                    
+                    @Override
+                    protected void succeeded() {
+                        Platform.runLater(() -> {
+                            if (getValue()) {
+                                addLogMessage(String.format("Conectado ao perfil '%s' com sucesso!", profileName));
+                            } else {
+                                showAlert("Erro", "Falha ao conectar ao perfil. Verifique a connection string.", Alert.AlertType.ERROR);
+                            }
+                        });
+                    }
+                    
+                    @Override
+                    protected void failed() {
+                        Platform.runLater(() -> {
+                            showAlert("Erro", "Erro ao conectar: " + getException().getMessage(), Alert.AlertType.ERROR);
+                        });
+                    }
+                };
+                
+                new Thread(connectTask).start();
+                
+            } else {
+                showAlert("Erro", "Perfil não encontrado: " + profileName, Alert.AlertType.ERROR);
+            }
+        } catch (Exception e) {
+            logger.error("Erro ao selecionar perfil", e);
+            showAlert("Erro", "Erro ao carregar perfil: " + e.getMessage(), Alert.AlertType.ERROR);
+        }
+    }
+    
+    private void handleManageProfiles() {
+        try {
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                getClass().getResource("/fxml/profile-manager-dialog.fxml")
+            );
+            
+            DialogPane dialogPane = loader.load();
+            ProfileManagerDialogController dialogController = loader.getController();
+            
+            Dialog<ButtonType> dialog = new Dialog<>();
+            dialog.setDialogPane(dialogPane);
+            dialog.setTitle("Gerenciar Perfis de Conexão");
+            dialog.setResizable(true);
+            
+            dialog.showAndWait();
+            
+            // Recarregar perfis após fechar o diálogo
+            loadProfiles();
+            
+        } catch (Exception e) {
+            logger.error("Erro ao abrir gerenciador de perfis", e);
+            showAlert("Erro", "Erro ao abrir gerenciador: " + e.getMessage(), Alert.AlertType.ERROR);
+        }
+    }
+    
     private void setupViewQueueComboBoxFilter() {
         viewQueueComboBox.getEditor().focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) {
@@ -897,10 +1018,6 @@ public class MainController implements Initializable {
     private void updateConnectionStatus() {
         boolean connected = serviceBusService.isConnected();
         
-        connectionPane.setVisible(!connected);
-        connectionPane.setManaged(!connected);
-        
-        connectButton.setDisable(connected);
         disconnectButton.setDisable(!connected);
         
         if (connected) {
@@ -944,55 +1061,6 @@ public class MainController implements Initializable {
                 logger.warn("Erro ao limpar listas: " + e.getMessage());
             }
         }
-    }
-    
-    private void handleConnect() {
-        String connectionString = connectionStringTextArea.getText().trim();
-        
-        if (connectionString.isEmpty()) {
-            showAlert("Erro", "Por favor, insira a connection string.", Alert.AlertType.ERROR);
-            return;
-        }
-        
-        if (!connectionString.contains("Endpoint=sb://") || !connectionString.contains("SharedAccessKey")) {
-            showAlert("Erro", "Formato de connection string inválido.", Alert.AlertType.ERROR);
-            return;
-        }
-        
-        connectButton.setDisable(true);
-        connectButton.setText("Conectando...");
-        
-        Task<Boolean> connectTask = new Task<Boolean>() {
-            @Override
-            protected Boolean call() throws Exception {
-                return serviceBusService.connectAsync(connectionString).get();
-            }
-            
-            @Override
-            protected void succeeded() {
-                Platform.runLater(() -> {
-                    connectButton.setDisable(false);
-                    connectButton.setText("Conectar");
-                    
-                    if (getValue()) {
-                        addLogMessage("Conexão estabelecida com sucesso!");
-                    } else {
-                        showAlert("Erro", "Falha na conexão. Verifique a connection string.", Alert.AlertType.ERROR);
-                    }
-                });
-            }
-            
-            @Override
-            protected void failed() {
-                Platform.runLater(() -> {
-                    connectButton.setDisable(false);
-                    connectButton.setText("Conectar");
-                    showAlert("Erro", "Erro ao conectar: " + getException().getMessage(), Alert.AlertType.ERROR);
-                });
-            }
-        };
-        
-        new Thread(connectTask).start();
     }
     
     private void handleDisconnect() {
