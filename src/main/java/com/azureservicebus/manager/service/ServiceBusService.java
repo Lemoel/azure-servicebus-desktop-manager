@@ -1090,6 +1090,126 @@ public class ServiceBusService {
     }
     
     /**
+     * Cria uma nova subscription com configurações avançadas
+     */
+    public CompletableFuture<CreateQueueResult> createSubscriptionAsync(
+            com.azureservicebus.manager.model.SubscriptionConfiguration config) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (!isConnected()) {
+                throw new IllegalStateException("Não conectado ao Service Bus");
+            }
+            
+            if (config == null || !config.isValid()) {
+                logError("Configuração de subscription inválida", new IllegalArgumentException("Config inválida"));
+                return CreateQueueResult.ERROR;
+            }
+            
+            try {
+                String topicName = config.getTopicName();
+                String subscriptionName = config.getName();
+                
+                // Criar options básicas
+                CreateSubscriptionOptions options = new CreateSubscriptionOptions();
+                
+                // Configurações que DEVEM ser definidas na criação
+                if (config.isRequiresSession()) {
+                    options.setSessionRequired(true);
+                }
+                
+                // Aplicar configurações de entrega
+                options.setMaxDeliveryCount(config.getMaxDeliveryCount());
+                options.setLockDuration(java.time.Duration.ofMinutes(config.getLockDurationMinutes()));
+                options.setDefaultMessageTimeToLive(java.time.Duration.ofDays(config.getDefaultMessageTimeToLiveDays()));
+                
+                // Configurações de dead letter
+                options.setDeadLetteringOnMessageExpiration(config.isDeadLetteringOnMessageExpiration());
+                
+                // Configurações de performance
+                options.setBatchedOperationsEnabled(config.isEnableBatchedOperations());
+                
+                // Auto-delete
+                if (config.isEnableAutoDeleteOnIdle()) {
+                    options.setAutoDeleteOnIdle(java.time.Duration.ofHours(config.getAutoDeleteOnIdleHours()));
+                }
+                
+                // Encaminhamento
+                if (config.isEnableForwardTo() && config.getForwardTo() != null && !config.getForwardTo().isEmpty()) {
+                    options.setForwardTo(config.getForwardTo());
+                }
+                if (config.isEnableForwardDeadLetteredMessagesTo() && 
+                    config.getForwardDeadLetteredMessagesTo() != null && 
+                    !config.getForwardDeadLetteredMessagesTo().isEmpty()) {
+                    options.setForwardDeadLetteredMessagesTo(config.getForwardDeadLetteredMessagesTo());
+                }
+                
+                // Metadados do usuário
+                if (config.getUserMetadata() != null && !config.getUserMetadata().isEmpty()) {
+                    options.setUserMetadata(config.getUserMetadata());
+                }
+                
+                // Verificar se tem filtro customizado
+                if (config.isFilterEnabled()) {
+                    // Criar com rule customizada
+                    CreateRuleOptions ruleOptions = new CreateRuleOptions();
+                    
+                    if ("SQL Filter".equals(config.getFilterType())) {
+                        ruleOptions.setFilter(new SqlRuleFilter(config.getSqlExpression()));
+                    } else if ("Correlation Filter".equals(config.getFilterType())) {
+                        CorrelationRuleFilter correlationFilter = new CorrelationRuleFilter();
+                        
+                        if (config.getCorrelationId() != null && !config.getCorrelationId().isEmpty()) {
+                            correlationFilter.setCorrelationId(config.getCorrelationId());
+                        }
+                        if (config.getMessageId() != null && !config.getMessageId().isEmpty()) {
+                            correlationFilter.setMessageId(config.getMessageId());
+                        }
+                        if (config.getSessionId() != null && !config.getSessionId().isEmpty()) {
+                            correlationFilter.setSessionId(config.getSessionId());
+                        }
+                        if (config.getReplyTo() != null && !config.getReplyTo().isEmpty()) {
+                            correlationFilter.setReplyTo(config.getReplyTo());
+                        }
+                        if (config.getLabel() != null && !config.getLabel().isEmpty()) {
+                            correlationFilter.setLabel(config.getLabel());
+                        }
+                        if (config.getContentType() != null && !config.getContentType().isEmpty()) {
+                            correlationFilter.setContentType(config.getContentType());
+                        }
+                        
+                        ruleOptions.setFilter(correlationFilter);
+                    }
+                    
+                    // Criar com rule customizada (não cria $Default)
+                    adminClient.createSubscription(topicName, subscriptionName, "CustomFilter", options, ruleOptions);
+                    
+                    logMessage(String.format(
+                        "Subscription '%s' criada com configurações customizadas e filtro '%s' no tópico '%s'",
+                        subscriptionName, config.getFilterType(), topicName));
+                } else {
+                    // Criar sem filtro customizado (cria com $Default)
+                    adminClient.createSubscription(topicName, subscriptionName, options);
+                    
+                    logMessage(String.format(
+                        "Subscription '%s' criada com configurações customizadas no tópico '%s'",
+                        subscriptionName, topicName));
+                }
+                
+                return CreateQueueResult.CREATED;
+                
+            } catch (com.azure.core.exception.ResourceExistsException e) {
+                logMessage(String.format("Subscription '%s' já existe no tópico '%s'", 
+                    config.getName(), config.getTopicName()));
+                return CreateQueueResult.ALREADY_EXISTS;
+                
+            } catch (Exception e) {
+                logError(String.format("Erro ao criar subscription '%s' com configurações no tópico '%s'", 
+                    config.getName(), config.getTopicName()), e);
+                return CreateQueueResult.ERROR;
+            }
+        }, executorService);
+    }
+    
+    /**
      * Cria uma nova subscription em um tópico COM rule customizada (não cria $Default)
      */
     public CompletableFuture<CreateQueueResult> createSubscriptionWithRuleAsync(

@@ -1,9 +1,11 @@
 package com.azureservicebus.manager.controller;
 
+import com.azureservicebus.manager.model.SubscriptionConfiguration;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,13 +14,41 @@ import java.net.URL;
 import java.util.ResourceBundle;
 
 /**
- * Controller para o diálogo de criação de subscription com filtro
+ * Controller para o diálogo de criação de subscription com configurações avançadas
  */
 public class CreateSubscriptionDialogController implements Initializable {
     
     private static final Logger logger = LoggerFactory.getLogger(CreateSubscriptionDialogController.class);
     
+    // Campos básicos
     @FXML private TextField subscriptionNameField;
+    @FXML private TabPane configTabPane;
+    @FXML private Label infoLabel;
+    
+    // Aba: Entrega
+    @FXML private Spinner<Integer> maxDeliveryCountSpinner;
+    @FXML private Spinner<Integer> lockDurationSpinner;
+    @FXML private Spinner<Integer> messageTtlSpinner;
+    @FXML private CheckBox batchedOperationsCheckBox;
+    
+    // Aba: Dead Letter
+    @FXML private CheckBox deadLetterOnExpirationCheckBox;
+    @FXML private CheckBox deadLetterOnFilterExceptionCheckBox;
+    
+    // Aba: Avançado
+    @FXML private CheckBox requiresSessionCheckBox;
+    @FXML private CheckBox autoDeleteCheckBox;
+    @FXML private HBox autoDeleteBox;
+    @FXML private Spinner<Integer> autoDeleteHoursSpinner;
+    @FXML private TextArea userMetadataTextArea;
+    
+    // Aba: Encaminhamento
+    @FXML private CheckBox forwardToCheckBox;
+    @FXML private TextField forwardToField;
+    @FXML private CheckBox forwardDeadLetterCheckBox;
+    @FXML private TextField forwardDeadLetterField;
+    
+    // Aba: Filtros
     @FXML private CheckBox enableFilterCheckBox;
     @FXML private VBox filterSection;
     @FXML private ComboBox<String> filterTypeComboBox;
@@ -31,7 +61,6 @@ public class CreateSubscriptionDialogController implements Initializable {
     @FXML private TextField replyToField;
     @FXML private TextField labelField;
     @FXML private TextField contentTypeField;
-    @FXML private Label infoLabel;
     
     private DialogPane dialogPane;
     private String topicName;
@@ -40,10 +69,36 @@ public class CreateSubscriptionDialogController implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         logger.info("Inicializando CreateSubscriptionDialogController");
         
+        setupSpinners();
         setupFilterTypeComboBox();
         setupEventHandlers();
         
         logger.info("CreateSubscriptionDialogController inicializado com sucesso");
+    }
+    
+    /**
+     * Configura os Spinners com valores padrão
+     */
+    private void setupSpinners() {
+        // Max Delivery Count: 1 a 1000, valor inicial 10
+        maxDeliveryCountSpinner.setValueFactory(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 1000, 10)
+        );
+        
+        // Lock Duration: 0 a 5 minutos, valor inicial 1
+        lockDurationSpinner.setValueFactory(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 5, 1)
+        );
+        
+        // Message TTL: 1 a 365 dias, valor inicial 14
+        messageTtlSpinner.setValueFactory(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 365, 14)
+        );
+        
+        // Auto Delete Hours: 1 a 8760 (1 ano), valor inicial 1
+        autoDeleteHoursSpinner.setValueFactory(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 8760, 1)
+        );
     }
     
     /**
@@ -95,13 +150,24 @@ public class CreateSubscriptionDialogController implements Initializable {
         enableFilterCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> {
             filterSection.setVisible(newVal);
             filterSection.setManaged(newVal);
-            
-            // Atualizar mensagem informativa
-            if (newVal) {
-                infoLabel.setText("Subscription será criada com rule '$Default' customizada com o filtro configurado");
-            } else {
-                infoLabel.setText("Subscription será criada com rule padrão '$Default' (aceita todas as mensagens)");
-            }
+        });
+        
+        // Listener para auto-delete
+        autoDeleteCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> {
+            autoDeleteBox.setVisible(newVal);
+            autoDeleteBox.setManaged(newVal);
+        });
+        
+        // Listener para forward to
+        forwardToCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> {
+            forwardToField.setVisible(newVal);
+            forwardToField.setManaged(newVal);
+        });
+        
+        // Listener para forward dead letter
+        forwardDeadLetterCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> {
+            forwardDeadLetterField.setVisible(newVal);
+            forwardDeadLetterField.setManaged(newVal);
         });
     }
     
@@ -130,6 +196,27 @@ public class CreateSubscriptionDialogController implements Initializable {
         if (subscriptionName.isEmpty()) {
             showAlert("Erro de Validação", "Digite um nome para a subscription", Alert.AlertType.ERROR);
             return false;
+        }
+        
+        // Validar encaminhamento
+        if (forwardToCheckBox.isSelected()) {
+            String forwardTo = forwardToField.getText().trim();
+            if (forwardTo.isEmpty()) {
+                showAlert("Erro de Validação", 
+                    "Digite o destino para encaminhamento de mensagens", 
+                    Alert.AlertType.ERROR);
+                return false;
+            }
+        }
+        
+        if (forwardDeadLetterCheckBox.isSelected()) {
+            String forwardDeadLetter = forwardDeadLetterField.getText().trim();
+            if (forwardDeadLetter.isEmpty()) {
+                showAlert("Erro de Validação", 
+                    "Digite o destino para encaminhamento de mensagens DLQ", 
+                    Alert.AlertType.ERROR);
+                return false;
+            }
         }
         
         // Se filtro habilitado, validar campos do filtro
@@ -167,6 +254,66 @@ public class CreateSubscriptionDialogController implements Initializable {
         
         return true;
     }
+    
+    /**
+     * Retorna a configuração completa da subscription
+     */
+    public SubscriptionConfiguration getConfiguration() {
+        SubscriptionConfiguration config = new SubscriptionConfiguration();
+        
+        // Básico
+        config.setName(subscriptionNameField.getText().trim());
+        config.setTopicName(topicName);
+        
+        // Entrega
+        config.setMaxDeliveryCount(maxDeliveryCountSpinner.getValue());
+        config.setLockDurationMinutes(lockDurationSpinner.getValue());
+        config.setDefaultMessageTimeToLiveDays(messageTtlSpinner.getValue());
+        config.setEnableBatchedOperations(batchedOperationsCheckBox.isSelected());
+        
+        // Dead Letter
+        config.setDeadLetteringOnMessageExpiration(deadLetterOnExpirationCheckBox.isSelected());
+        config.setDeadLetteringOnFilterEvaluationExceptions(deadLetterOnFilterExceptionCheckBox.isSelected());
+        
+        // Avançado
+        config.setRequiresSession(requiresSessionCheckBox.isSelected());
+        config.setEnableAutoDeleteOnIdle(autoDeleteCheckBox.isSelected());
+        if (autoDeleteCheckBox.isSelected()) {
+            config.setAutoDeleteOnIdleHours(autoDeleteHoursSpinner.getValue());
+        }
+        config.setUserMetadata(userMetadataTextArea.getText().trim());
+        
+        // Encaminhamento
+        config.setEnableForwardTo(forwardToCheckBox.isSelected());
+        if (forwardToCheckBox.isSelected()) {
+            config.setForwardTo(forwardToField.getText().trim());
+        }
+        config.setEnableForwardDeadLetteredMessagesTo(forwardDeadLetterCheckBox.isSelected());
+        if (forwardDeadLetterCheckBox.isSelected()) {
+            config.setForwardDeadLetteredMessagesTo(forwardDeadLetterField.getText().trim());
+        }
+        
+        // Filtros
+        config.setFilterEnabled(enableFilterCheckBox.isSelected());
+        if (enableFilterCheckBox.isSelected()) {
+            config.setFilterType(filterTypeComboBox.getValue());
+            
+            if ("SQL Filter".equals(filterTypeComboBox.getValue())) {
+                config.setSqlExpression(sqlExpressionTextArea.getText().trim());
+            } else {
+                config.setCorrelationId(correlationIdField.getText().trim());
+                config.setMessageId(messageIdField.getText().trim());
+                config.setSessionId(sessionIdField.getText().trim());
+                config.setReplyTo(replyToField.getText().trim());
+                config.setLabel(labelField.getText().trim());
+                config.setContentType(contentTypeField.getText().trim());
+            }
+        }
+        
+        return config;
+    }
+    
+    // ===== Métodos de compatibilidade com código existente =====
     
     /**
      * Retorna o nome da subscription

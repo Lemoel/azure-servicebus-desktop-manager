@@ -91,6 +91,7 @@ public class MainController implements Initializable {
     
     // Subscriptions
     @FXML private Label selectedTopicLabel;
+    @FXML private TextField subscriptionFilterField;
     @FXML private Button loadSubscriptionsButton;
     @FXML private TableView<SubscriptionInfo> subscriptionsTable;
     @FXML private TableColumn<SubscriptionInfo, String> subscriptionNameColumn;
@@ -792,6 +793,7 @@ public class MainController implements Initializable {
         
         // Subscriptions
         loadSubscriptionsButton.setOnAction(e -> handleLoadSubscriptions());
+        subscriptionFilterField.textProperty().addListener((obs, oldVal, newVal) -> filterSubscriptions(newVal));
         createSubscriptionButton.setOnAction(e -> handleCreateSubscription());
         
         // Criar subscription avançada - se o botão existir
@@ -1664,6 +1666,18 @@ public class MainController implements Initializable {
         topicListView.setItems(filteredTopics);
     }
     
+    private void filterSubscriptions(String filter) {
+        if (filter == null || filter.trim().isEmpty()) {
+            subscriptionsTable.setItems(subscriptionDetails);
+            return;
+        }
+        
+        ObservableList<SubscriptionInfo> filteredSubscriptions = subscriptionDetails.filtered(
+            sub -> sub.getName().toLowerCase().contains(filter.toLowerCase())
+        );
+        subscriptionsTable.setItems(filteredSubscriptions);
+    }
+    
     private void handleTopicSelection(String selectedTopic) {
         if (selectedTopic == null || !serviceBusService.isConnected()) {
             return;
@@ -1923,7 +1937,7 @@ public class MainController implements Initializable {
     }
     
     /**
-     * Abre diálogo para criação de subscription com filtro customizado
+     * Abre diálogo para criação de subscription com configurações avançadas
      */
     private void handleCreateAdvancedSubscription() {
         if (selectedTopicName == null) {
@@ -1951,8 +1965,19 @@ public class MainController implements Initializable {
             // Criar o diálogo
             Dialog<ButtonType> dialog = new Dialog<>();
             dialog.setDialogPane(dialogPane);
-            dialog.setTitle("Criar Subscription com Filtro - " + selectedTopicName);
+            dialog.setTitle("Configurar Nova Subscription - " + selectedTopicName);
             dialog.setResizable(true);
+            
+            // Customizar textos dos botões
+            Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
+            if (okButton != null) {
+                okButton.setText("✅ Criar Subscription");
+            }
+            
+            Button cancelButton = (Button) dialogPane.lookupButton(ButtonType.CANCEL);
+            if (cancelButton != null) {
+                cancelButton.setText("❌ Cancelar");
+            }
             
             // Configurar o controller com o dialogPane
             dialogController.setDialogPane(dialogPane);
@@ -1961,54 +1986,17 @@ public class MainController implements Initializable {
             Optional<ButtonType> result = dialog.showAndWait();
             
             if (result.isPresent() && result.get() == ButtonType.OK) {
-                String subscriptionName = dialogController.getSubscriptionName();
-                boolean filterEnabled = dialogController.isFilterEnabled();
+                // Obter configuração completa do diálogo
+                com.azureservicebus.manager.model.SubscriptionConfiguration config = dialogController.getConfiguration();
                 
-                if (!filterEnabled) {
-                    // Criar subscription normal
-                    createSimpleSubscription(subscriptionName);
-                } else {
-                    // Criar subscription com filtro
-                    String filterType = dialogController.getFilterType();
-                    
+                if (config != null && config.isValid()) {
+                    // Criar subscription com configurações customizadas
                     createAdvancedSubscriptionButton.setDisable(true);
                     
                     Task<CreateQueueResult> createTask = new Task<CreateQueueResult>() {
                         @Override
                         protected CreateQueueResult call() throws Exception {
-                            if (filterType.equals("SQL Filter")) {
-                                String sqlExpression = dialogController.getSqlExpression();
-                                return serviceBusService.createSubscriptionWithRuleAsync(
-                                    selectedTopicName, 
-                                    subscriptionName, 
-                                    "$Default",
-                                    "SQL Filter",
-                                    sqlExpression,
-                                    null, null, null, null, null, null
-                                ).get();
-                            } else {
-                                // Correlation Filter
-                                String correlationId = dialogController.getCorrelationId();
-                                String messageId = dialogController.getMessageId();
-                                String sessionId = dialogController.getSessionId();
-                                String replyTo = dialogController.getReplyTo();
-                                String label = dialogController.getLabel();
-                                String contentType = dialogController.getContentType();
-                                
-                                return serviceBusService.createSubscriptionWithRuleAsync(
-                                    selectedTopicName, 
-                                    subscriptionName, 
-                                    "$Default",
-                                    "Correlation Filter",
-                                    null,
-                                    correlationId.isEmpty() ? null : correlationId,
-                                    messageId.isEmpty() ? null : messageId,
-                                    sessionId.isEmpty() ? null : sessionId,
-                                    replyTo.isEmpty() ? null : replyTo,
-                                    label.isEmpty() ? null : label,
-                                    contentType.isEmpty() ? null : contentType
-                                ).get();
-                            }
+                            return serviceBusService.createSubscriptionAsync(config).get();
                         }
                         
                         @Override
@@ -2020,25 +2008,37 @@ public class MainController implements Initializable {
                                 CreateQueueResult createResult = getValue();
                                 switch (createResult) {
                                     case CREATED:
-                                        addLogMessage(String.format("Subscription '%s' criada com filtro customizado!", subscriptionName));
-                                        showAlert("Sucesso", 
-                                            String.format("Subscription '%s' foi criada com sucesso!\n\nFiltro aplicado: %s", 
-                                                subscriptionName, filterType), 
-                                            Alert.AlertType.INFORMATION);
+                                        StringBuilder msg = new StringBuilder();
+                                        msg.append(String.format("Subscription '%s' criada com sucesso!\n\n", config.getName()));
+                                        msg.append("Configurações aplicadas:\n");
+                                        msg.append(String.format("• Max Delivery Count: %d\n", config.getMaxDeliveryCount()));
+                                        msg.append(String.format("• Lock Duration: %d minuto(s)\n", config.getLockDurationMinutes()));
+                                        msg.append(String.format("• Message TTL: %d dia(s)\n", config.getDefaultMessageTimeToLiveDays()));
+                                        
+                                        if (config.isFilterEnabled()) {
+                                            msg.append(String.format("• Filtro: %s\n", config.getFilterType()));
+                                        }
+                                        
+                                        addLogMessage(String.format("Subscription '%s' criada com configurações customizadas no tópico '%s'!", 
+                                            config.getName(), selectedTopicName));
+                                        showAlert("Sucesso", msg.toString(), Alert.AlertType.INFORMATION);
                                         handleLoadSubscriptions();
                                         break;
                                         
                                     case ALREADY_EXISTS:
-                                        addLogMessage(String.format("Subscription '%s' já existe", subscriptionName));
+                                        addLogMessage(String.format("Subscription '%s' já existe no tópico '%s'", 
+                                            config.getName(), selectedTopicName));
                                         showAlert("Informação", 
-                                            String.format("A subscription '%s' já existe.", subscriptionName), 
+                                            String.format("A subscription '%s' já existe no tópico '%s'.\nVocê pode utilizá-la normalmente.", 
+                                                config.getName(), selectedTopicName), 
                                             Alert.AlertType.WARNING);
                                         handleLoadSubscriptions();
                                         break;
                                         
                                     case ERROR:
                                         showAlert("Erro", 
-                                            String.format("Erro ao criar subscription '%s'.", subscriptionName), 
+                                            String.format("Erro ao criar subscription '%s'. Verifique os logs para mais detalhes.", 
+                                                config.getName()), 
                                             Alert.AlertType.ERROR);
                                         break;
                                 }
