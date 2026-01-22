@@ -90,10 +90,13 @@ public class CreateSubscriptionDialogController implements Initializable {
             new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 5, 1)
         );
         
-        // Message TTL: 1 a 365 dias, valor inicial 14
+        // Message TTL: 1 a 36500 dias, SEM valor inicial (vazio = infinito)
         messageTtlSpinner.setValueFactory(
-            new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 365, 14)
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 36500, 1)
         );
+        // Limpar o valor inicial para começar vazio
+        messageTtlSpinner.getValueFactory().setValue(null);
+        messageTtlSpinner.setEditable(true);
         
         // Auto Delete Hours: 1 a 8760 (1 ano), valor inicial 1
         autoDeleteHoursSpinner.setValueFactory(
@@ -268,7 +271,11 @@ public class CreateSubscriptionDialogController implements Initializable {
         // Entrega
         config.setMaxDeliveryCount(maxDeliveryCountSpinner.getValue());
         config.setLockDurationMinutes(lockDurationSpinner.getValue());
-        config.setDefaultMessageTimeToLiveDays(messageTtlSpinner.getValue());
+        
+        // TTL: Só setar se o usuário tiver preenchido algo
+        Integer ttlValue = messageTtlSpinner.getValue();
+        config.setDefaultMessageTimeToLiveDays(ttlValue); // null = infinito
+        
         config.setEnableBatchedOperations(batchedOperationsCheckBox.isSelected());
         
         // Dead Letter

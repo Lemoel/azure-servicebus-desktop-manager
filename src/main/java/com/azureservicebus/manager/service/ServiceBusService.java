@@ -1119,7 +1119,13 @@ public class ServiceBusService {
                 // Aplicar configurações de entrega
                 options.setMaxDeliveryCount(config.getMaxDeliveryCount());
                 options.setLockDuration(java.time.Duration.ofMinutes(config.getLockDurationMinutes()));
-                options.setDefaultMessageTimeToLive(java.time.Duration.ofDays(config.getDefaultMessageTimeToLiveDays()));
+                
+                // TTL: Só setar se o usuário especificou um valor customizado
+                // Se não setar, o Azure usa o padrão (TimeSpan.MaxValue = infinito)
+                if (config.hasCustomMessageTimeToLive()) {
+                    options.setDefaultMessageTimeToLive(java.time.Duration.ofDays(config.getDefaultMessageTimeToLiveDays()));
+                }
+                // Se null (vazio), não setamos - Azure usará infinito automaticamente
                 
                 // Configurações de dead letter
                 options.setDeadLetteringOnMessageExpiration(config.isDeadLetteringOnMessageExpiration());
@@ -1127,7 +1133,8 @@ public class ServiceBusService {
                 // Configurações de performance
                 options.setBatchedOperationsEnabled(config.isEnableBatchedOperations());
                 
-                // Auto-delete
+                // Auto-delete: Só aplicar se explicitamente habilitado
+                // Se não habilitado, não setar (Azure usa infinito por padrão)
                 if (config.isEnableAutoDeleteOnIdle()) {
                     options.setAutoDeleteOnIdle(java.time.Duration.ofHours(config.getAutoDeleteOnIdleHours()));
                 }

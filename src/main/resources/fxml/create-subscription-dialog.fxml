@@ -74,14 +74,17 @@
                             
                             <!-- Default Message TTL -->
                             <VBox spacing="5">
-                                <Label text="Message Time To Live (TTL):" styleClass="field-label">
-                                    <font>
-                                        <Font name="System Bold" size="11"/>
-                                    </font>
-                                </Label>
+                                <HBox spacing="5" alignment="CENTER_LEFT">
+                                    <Label text="Message Time To Live (TTL):" styleClass="field-label">
+                                        <font>
+                                            <Font name="System Bold" size="11"/>
+                                        </font>
+                                    </Label>
+                                    <Label text="(Padrão: Infinito)" style="-fx-text-fill: #28a745; -fx-font-size: 10px; -fx-font-weight: bold;"/>
+                                </HBox>
                                 <HBox spacing="10" alignment="CENTER_LEFT">
                                     <Spinner fx:id="messageTtlSpinner" editable="true" prefWidth="120"/>
-                                    <Label text="dia(s) de vida útil da mensagem" style="-fx-text-fill: #666; -fx-font-size: 10px;"/>
+                                    <Label text="dia(s) de vida útil da mensagem (deixe vazio para infinito)" style="-fx-text-fill: #666; -fx-font-size: 10px;"/>
                                 </HBox>
                             </VBox>
                             
@@ -150,7 +153,10 @@
                             
                             <!-- Auto Delete on Idle -->
                             <VBox spacing="8">
-                                <Label text="Auto-Delete" style="-fx-font-weight: bold;"/>
+                                <HBox spacing="5" alignment="CENTER_LEFT">
+                                    <Label text="Auto-Delete" style="-fx-font-weight: bold;"/>
+                                    <Label text="(Padrão: Nunca)" style="-fx-text-fill: #28a745; -fx-font-size: 10px; -fx-font-weight: bold;"/>
+                                </HBox>
                                 <CheckBox fx:id="autoDeleteCheckBox" 
                                          text="Habilitar Auto-Delete quando inativa">
                                     <font>

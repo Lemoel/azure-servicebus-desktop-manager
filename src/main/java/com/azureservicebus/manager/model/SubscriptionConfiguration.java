@@ -11,7 +11,7 @@ public class SubscriptionConfiguration {
     // Configurações de entrega
     private int maxDeliveryCount = 10;
     private int lockDurationMinutes = 1; // 1 minuto padrão
-    private int defaultMessageTimeToLiveDays = 14; // 14 dias padrão
+    private Integer defaultMessageTimeToLiveDays = null; // null = infinito
     
     // Configurações de dead-lettering
     private boolean deadLetteringOnMessageExpiration = false;
@@ -68,7 +68,9 @@ public class SubscriptionConfiguration {
         if (lockDurationMinutes < 0 || lockDurationMinutes > 5) {
             return false;
         }
-        if (defaultMessageTimeToLiveDays < 0 || defaultMessageTimeToLiveDays > 365) {
+        // TTL pode ser null (infinito) ou um valor positivo
+        if (defaultMessageTimeToLiveDays != null && 
+            (defaultMessageTimeToLiveDays < 1 || defaultMessageTimeToLiveDays > 36500)) {
             return false;
         }
         if (enableAutoDeleteOnIdle && autoDeleteOnIdleHours < 0) {
@@ -118,12 +120,19 @@ public class SubscriptionConfiguration {
         this.lockDurationMinutes = lockDurationMinutes;
     }
     
-    public int getDefaultMessageTimeToLiveDays() {
+    public Integer getDefaultMessageTimeToLiveDays() {
         return defaultMessageTimeToLiveDays;
     }
     
-    public void setDefaultMessageTimeToLiveDays(int defaultMessageTimeToLiveDays) {
+    public void setDefaultMessageTimeToLiveDays(Integer defaultMessageTimeToLiveDays) {
         this.defaultMessageTimeToLiveDays = defaultMessageTimeToLiveDays;
+    }
+    
+    /**
+     * Verifica se o TTL foi explicitamente definido pelo usuário
+     */
+    public boolean hasCustomMessageTimeToLive() {
+        return defaultMessageTimeToLiveDays != null;
     }
     
     public boolean isDeadLetteringOnMessageExpiration() {
