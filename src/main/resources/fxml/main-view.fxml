@@ -20,7 +20,7 @@
             </Label>
             <Region HBox.hgrow="ALWAYS" />
             <HBox spacing="10.0" alignment="CENTER_LEFT">
-               <Label text="📁 Perfil:" styleClass="profile-label">
+               <Label text="⚙️ Perfil:" styleClass="profile-label">
                   <font>
                      <Font name="System Bold" size="12.0" />
                   </font>
