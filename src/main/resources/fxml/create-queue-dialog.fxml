@@ -177,11 +177,12 @@
                               prefWidth="150.0" />
                      <Label text="ℹ️" styleClass="info-icon">
                         <tooltip>
-                           <Tooltip text="Tempo de vida padrão das mensagens em horas (padrão: 336h = 14 dias)" 
+                           <Tooltip text="Tempo de vida padrão das mensagens em horas. Deixe vazio para infinito (padrão Azure)" 
                                     wrapText="true" maxWidth="300" />
                         </tooltip>
                      </Label>
                   </HBox>
+                  <Label text="(Vazio = Infinito)" styleClass="hint-label" style="-fx-font-size: 10px; -fx-text-fill: #666;" />
                </VBox>
                
                <!-- Duplicate Detection Window (visível apenas quando habilitado) -->

@@ -85,10 +85,10 @@ public class CreateQueueDialogController implements Initializable {
         );
         lockDurationSpinner.setEditable(true);
         
-        // Default TTL: 1 a 8760 horas (1 ano), padrão 336 (14 dias)
-        ttlSpinner.setValueFactory(
-            new IntegerSpinnerValueFactory(1, 8760, 336, 24)
-        );
+        // Default TTL: 1 a 36500 dias (100 anos), SEM valor inicial (null = infinito)
+        IntegerSpinnerValueFactory ttlValueFactory = new IntegerSpinnerValueFactory(1, 36500, 1, 1);
+        ttlValueFactory.setValue(null); // null = infinito (padrão Azure)
+        ttlSpinner.setValueFactory(ttlValueFactory);
         ttlSpinner.setEditable(true);
     }
     
@@ -248,7 +248,15 @@ public class CreateQueueDialogController implements Initializable {
             
             // Configurações adicionais
             configuration.setMaxSizeInMB(maxSizeComboBox.getValue());
-            configuration.setDefaultMessageTimeToLiveHours(ttlSpinner.getValue());
+            
+            // TTL: Se null (vazio), deixar como null (infinito)
+            // Se preenchido, converter horas para Duration
+            Integer ttlValue = ttlSpinner.getValue();
+            if (ttlValue != null) {
+                configuration.setDefaultMessageTimeToLiveHours(ttlValue);
+            } else {
+                configuration.setDefaultMessageTimeToLive(null); // Infinito
+            }
             
             // Validar configuração completa
             if (!configuration.isValid()) {
@@ -312,6 +320,12 @@ public class CreateQueueDialogController implements Initializable {
         duplicateDetectionCheckBox.setSelected(config.isDuplicateDetectionEnabled());
         duplicateDetectionWindowSpinner.getValueFactory().setValue(config.getDuplicateDetectionHistoryTimeWindowMinutes());
         maxSizeComboBox.setValue((int) config.getMaxSizeInMB());
-        ttlSpinner.getValueFactory().setValue(config.getDefaultMessageTimeToLiveHours());
+        
+        // TTL: Se null, deixar vazio (infinito). Se definido, mostrar em horas
+        if (config.hasCustomMessageTimeToLive()) {
+            ttlSpinner.getValueFactory().setValue(config.getDefaultMessageTimeToLiveHours());
+        } else {
+            ttlSpinner.getValueFactory().setValue(null); // Infinito
+        }
     }
 }

@@ -355,7 +355,13 @@ public class ServiceBusService {
                 queueProperties.setDeadLetteringOnMessageExpiration(config.isDeadLetteringOnMessageExpiration());
                 queueProperties.setBatchedOperationsEnabled(config.isBatchedOperationsEnabled());
                 queueProperties.setMaxSizeInMegabytes((int) config.getMaxSizeInMB());
-                queueProperties.setDefaultMessageTimeToLive(config.getDefaultMessageTimeToLive());
+                
+                // TTL: Só setar se o usuário especificou um valor customizado
+                // Se não setar, o Azure usa o padrão (TimeSpan.MaxValue = infinito)
+                if (config.hasCustomMessageTimeToLive()) {
+                    queueProperties.setDefaultMessageTimeToLive(config.getDefaultMessageTimeToLive());
+                }
+                // Se null (vazio), não setamos - Azure usará infinito automaticamente
                 
                 // Atualizar a fila com as configurações
                 adminClient.updateQueue(queueProperties);

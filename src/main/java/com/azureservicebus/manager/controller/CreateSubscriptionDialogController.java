@@ -201,6 +201,16 @@ public class CreateSubscriptionDialogController implements Initializable {
             return false;
         }
         
+        // Validar limite de 50 caracteres do Azure
+        if (subscriptionName.length() > 50) {
+            showAlert("Erro de Validação", 
+                "O nome da subscription não pode ter mais de 50 caracteres.\n" +
+                "O Azure Service Bus limita o nome a 50 caracteres.\n" +
+                "Tamanho atual: " + subscriptionName.length() + " caracteres", 
+                Alert.AlertType.ERROR);
+            return false;
+        }
+        
         // Validar encaminhamento
         if (forwardToCheckBox.isSelected()) {
             String forwardTo = forwardToField.getText().trim();

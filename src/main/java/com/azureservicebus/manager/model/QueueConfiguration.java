@@ -21,7 +21,7 @@ public class QueueConfiguration {
     private boolean duplicateDetectionEnabled;
     private Duration duplicateDetectionHistoryTimeWindow;
     private long maxSizeInMB;
-    private Duration defaultMessageTimeToLive;
+    private Duration defaultMessageTimeToLive; // null = infinito (padrão Azure)
     
     /**
      * Construtor com valores padrão recomendados
@@ -37,7 +37,7 @@ public class QueueConfiguration {
         this.duplicateDetectionEnabled = false;
         this.duplicateDetectionHistoryTimeWindow = Duration.ofMinutes(10); // Padrão: 10 minutos
         this.maxSizeInMB = 1024;
-        this.defaultMessageTimeToLive = Duration.ofHours(336); // 14 dias
+        this.defaultMessageTimeToLive = null; // null = infinito (padrão Azure)
     }
     
     /**
@@ -168,7 +168,15 @@ public class QueueConfiguration {
     }
     
     public int getDefaultMessageTimeToLiveHours() {
-        return (int) defaultMessageTimeToLive.toHours();
+        return defaultMessageTimeToLive != null ? (int) defaultMessageTimeToLive.toHours() : 0;
+    }
+    
+    /**
+     * Verifica se tem um TTL customizado definido
+     * @return true se TTL foi definido, false se null (infinito)
+     */
+    public boolean hasCustomMessageTimeToLive() {
+        return defaultMessageTimeToLive != null;
     }
     
     /**
@@ -219,7 +227,7 @@ public class QueueConfiguration {
                 ", duplicateDetection=" + duplicateDetectionEnabled +
                 ", duplicateDetectionWindow=" + (duplicateDetectionEnabled ? duplicateDetectionHistoryTimeWindow.toMinutes() + " min" : "N/A") +
                 ", maxSize=" + maxSizeInMB + " MB" +
-                ", ttl=" + defaultMessageTimeToLive.toHours() + " hours" +
+                ", ttl=" + (defaultMessageTimeToLive != null ? defaultMessageTimeToLive.toHours() + " hours" : "infinito") +
                 '}';
     }
 }

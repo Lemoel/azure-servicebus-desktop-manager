@@ -952,6 +952,7 @@ public class MainController implements Initializable {
             ProfileManagerDialogController dialogController = loader.getController();
             
             Dialog<ButtonType> dialog = new Dialog<>();
+            dialog.initOwner(primaryStage); // Garantir que dialog abra no mesmo monitor da janela principal
             dialog.setDialogPane(dialogPane);
             dialog.setTitle("Gerenciar Perfis de Conexão");
             dialog.setResizable(true);
@@ -1237,6 +1238,7 @@ public class MainController implements Initializable {
             
             // Criar o diálogo PRIMEIRO
             Dialog<ButtonType> dialog = new Dialog<>();
+            dialog.initOwner(primaryStage); // Garantir que dialog abra no mesmo monitor da janela principal
             dialog.setDialogPane(dialogPane);
             dialog.setTitle("Configurar Nova Fila");
             dialog.setResizable(true); // Permitir redimensionamento pelo mouse
@@ -1879,6 +1881,16 @@ public class MainController implements Initializable {
             return;
         }
         
+        // Validar limite de 50 caracteres do Azure
+        if (subscriptionName.length() > 50) {
+            showAlert("Erro", 
+                "O nome da subscription não pode ter mais de 50 caracteres.\n" +
+                "O Azure Service Bus limita o nome a 50 caracteres.\n" +
+                "Tamanho atual: " + subscriptionName.length() + " caracteres", 
+                Alert.AlertType.ERROR);
+            return;
+        }
+        
         createSubscriptionButton.setDisable(true);
         
         Task<CreateQueueResult> createTask = new Task<CreateQueueResult>() {
@@ -1964,6 +1976,7 @@ public class MainController implements Initializable {
             
             // Criar o diálogo
             Dialog<ButtonType> dialog = new Dialog<>();
+            dialog.initOwner(primaryStage); // Garantir que dialog abra no mesmo monitor da janela principal
             dialog.setDialogPane(dialogPane);
             dialog.setTitle("Configurar Nova Subscription - " + selectedTopicName);
             dialog.setResizable(true);
@@ -2264,6 +2277,7 @@ public class MainController implements Initializable {
             dialogController.setQueue(queueInfo.getName(), serviceBusService);
             
             Dialog<ButtonType> dialog = new Dialog<>();
+            dialog.initOwner(primaryStage); // Garantir que dialog abra no mesmo monitor da janela principal
             dialog.setDialogPane(dialogPane);
             dialog.setTitle("Detalhes da Fila - " + queueInfo.getName());
             dialog.setResizable(true);
@@ -2288,6 +2302,7 @@ public class MainController implements Initializable {
             dialogController.setSubscription(subInfo.getTopicName(), subInfo.getName(), serviceBusService);
             
             Dialog<ButtonType> dialog = new Dialog<>();
+            dialog.initOwner(primaryStage); // Garantir que dialog abra no mesmo monitor da janela principal
             dialog.setDialogPane(dialogPane);
             dialog.setTitle("Detalhes da Subscription - " + subInfo.getTopicName() + "/" + subInfo.getName());
             dialog.setResizable(true);
@@ -2313,6 +2328,7 @@ public class MainController implements Initializable {
             dialogController.setDialogPane(dialogPane);
             
             Dialog<ButtonType> dialog = new Dialog<>();
+            dialog.initOwner(primaryStage); // Garantir que dialog abra no mesmo monitor da janela principal
             dialog.setDialogPane(dialogPane);
             dialog.setTitle("Gerenciar Rules - " + subInfo.getTopicName() + "/" + subInfo.getName());
             
