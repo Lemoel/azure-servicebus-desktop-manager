@@ -21,6 +21,7 @@ public class QueueDetailsDialogController {
     // Referências
     private ServiceBusService serviceBusService;
     private String queueName;
+    private DialogPane dialogPane;
     
     // FXML Components - Header
     @FXML private Label queueNameLabel;
@@ -72,6 +73,13 @@ public class QueueDetailsDialogController {
         
         // Carregar detalhes da fila
         loadQueueDetails();
+    }
+    
+    /**
+     * Define o DialogPane para garantir que alerts abram no mesmo monitor
+     */
+    public void setDialogPane(DialogPane dialogPane) {
+        this.dialogPane = dialogPane;
     }
     
     /**
@@ -258,6 +266,10 @@ public class QueueDetailsDialogController {
      */
     private void showError(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
+        // Garantir que alert abra no mesmo monitor do dialog pai
+        if (dialogPane != null && dialogPane.getScene() != null && dialogPane.getScene().getWindow() != null) {
+            alert.initOwner(dialogPane.getScene().getWindow());
+        }
         alert.setTitle("Erro");
         alert.setHeaderText("Erro ao carregar detalhes");
         alert.setContentText(message);

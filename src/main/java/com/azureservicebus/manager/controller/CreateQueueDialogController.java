@@ -280,6 +280,10 @@ public class CreateQueueDialogController implements Initializable {
      */
     private void showError(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
+        // Garantir que alert abra no mesmo monitor do dialog pai
+        if (dialogPane != null && dialogPane.getScene() != null && dialogPane.getScene().getWindow() != null) {
+            alert.initOwner(dialogPane.getScene().getWindow());
+        }
         alert.setTitle("Erro de Validação");
         alert.setHeaderText("Configuração Inválida");
         alert.setContentText(message);

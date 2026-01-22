@@ -53,6 +53,7 @@ public class ProfileManagerDialogController implements Initializable {
     private String editingProfileName = null;
     private ToggleGroup colorToggleGroup;
     private String selectedColor = "#28a745"; // Verde como padrão
+    private DialogPane dialogPane;
     
     private Runnable onProfileChangedCallback;
     
@@ -97,6 +98,13 @@ public class ProfileManagerDialogController implements Initializable {
      */
     public void setOnProfileChangedCallback(Runnable callback) {
         this.onProfileChangedCallback = callback;
+    }
+    
+    /**
+     * Define o DialogPane para garantir que alerts abram no mesmo monitor
+     */
+    public void setDialogPane(DialogPane dialogPane) {
+        this.dialogPane = dialogPane;
     }
     
     private void setupTableColumns() {
@@ -325,6 +333,10 @@ public class ProfileManagerDialogController implements Initializable {
     
     private void handleDeleteProfile(ConnectionProfile profile) {
         Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+        // Garantir que alert abra no mesmo monitor do dialog pai
+        if (dialogPane != null && dialogPane.getScene() != null && dialogPane.getScene().getWindow() != null) {
+            confirmation.initOwner(dialogPane.getScene().getWindow());
+        }
         confirmation.setTitle("Confirmar Exclusão");
         confirmation.setHeaderText("Excluir perfil '" + profile.getName() + "'?");
         confirmation.setContentText("Esta ação não pode ser desfeita.");
@@ -386,6 +398,10 @@ public class ProfileManagerDialogController implements Initializable {
     
     private void showError(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
+        // Garantir que alert abra no mesmo monitor do dialog pai
+        if (dialogPane != null && dialogPane.getScene() != null && dialogPane.getScene().getWindow() != null) {
+            alert.initOwner(dialogPane.getScene().getWindow());
+        }
         alert.setTitle(title);
         alert.setHeaderText(null);
         alert.setContentText(message);
@@ -394,6 +410,10 @@ public class ProfileManagerDialogController implements Initializable {
     
     private void showInfo(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        // Garantir que alert abra no mesmo monitor do dialog pai
+        if (dialogPane != null && dialogPane.getScene() != null && dialogPane.getScene().getWindow() != null) {
+            alert.initOwner(dialogPane.getScene().getWindow());
+        }
         alert.setTitle(title);
         alert.setHeaderText(null);
         alert.setContentText(message);

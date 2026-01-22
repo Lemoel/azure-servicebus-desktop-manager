@@ -2275,6 +2275,7 @@ public class MainController implements Initializable {
             QueueDetailsDialogController dialogController = loader.getController();
             
             dialogController.setQueue(queueInfo.getName(), serviceBusService);
+            dialogController.setDialogPane(dialogPane);
             
             Dialog<ButtonType> dialog = new Dialog<>();
             dialog.initOwner(primaryStage); // Garantir que dialog abra no mesmo monitor da janela principal
@@ -2300,6 +2301,7 @@ public class MainController implements Initializable {
             SubscriptionDetailsDialogController dialogController = loader.getController();
             
             dialogController.setSubscription(subInfo.getTopicName(), subInfo.getName(), serviceBusService);
+            dialogController.setDialogPane(dialogPane);
             
             Dialog<ButtonType> dialog = new Dialog<>();
             dialog.initOwner(primaryStage); // Garantir que dialog abra no mesmo monitor da janela principal
@@ -2466,6 +2468,7 @@ public class MainController implements Initializable {
     
     private void showAlert(String title, String message, Alert.AlertType type) {
         Alert alert = new Alert(type);
+        alert.initOwner(primaryStage); // Garantir que alert abra no mesmo monitor da janela principal
         alert.setTitle(title);
         alert.setHeaderText(null);
         alert.setContentText(message);
@@ -2474,6 +2477,7 @@ public class MainController implements Initializable {
     
     private Optional<ButtonType> showConfirmation(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.initOwner(primaryStage); // Garantir que alert abra no mesmo monitor da janela principal
         alert.setTitle(title);
         alert.setHeaderText(null);
         alert.setContentText(message);

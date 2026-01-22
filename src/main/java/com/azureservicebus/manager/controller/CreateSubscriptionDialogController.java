@@ -404,6 +404,10 @@ public class CreateSubscriptionDialogController implements Initializable {
     
     private void showAlert(String title, String message, Alert.AlertType type) {
         Alert alert = new Alert(type);
+        // Garantir que alert abra no mesmo monitor do dialog pai
+        if (dialogPane != null && dialogPane.getScene() != null && dialogPane.getScene().getWindow() != null) {
+            alert.initOwner(dialogPane.getScene().getWindow());
+        }
         alert.setTitle(title);
         alert.setHeaderText(null);
         alert.setContentText(message);

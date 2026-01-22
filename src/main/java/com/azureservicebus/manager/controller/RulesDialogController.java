@@ -605,6 +605,10 @@ public class RulesDialogController implements Initializable {
     
     private void showAlert(String title, String message, Alert.AlertType type) {
         Alert alert = new Alert(type);
+        // Garantir que alert abra no mesmo monitor do dialog pai
+        if (dialogPane != null && dialogPane.getScene() != null && dialogPane.getScene().getWindow() != null) {
+            alert.initOwner(dialogPane.getScene().getWindow());
+        }
         alert.setTitle(title);
         alert.setHeaderText(null);
         alert.setContentText(message);
@@ -613,6 +617,10 @@ public class RulesDialogController implements Initializable {
     
     private Optional<ButtonType> showConfirmation(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        // Garantir que alert abra no mesmo monitor do dialog pai
+        if (dialogPane != null && dialogPane.getScene() != null && dialogPane.getScene().getWindow() != null) {
+            alert.initOwner(dialogPane.getScene().getWindow());
+        }
         alert.setTitle(title);
         alert.setHeaderText(null);
         alert.setContentText(message);

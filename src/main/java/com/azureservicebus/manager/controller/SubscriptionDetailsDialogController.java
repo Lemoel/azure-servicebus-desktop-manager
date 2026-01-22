@@ -26,6 +26,7 @@ public class SubscriptionDetailsDialogController {
     private ServiceBusService serviceBusService;
     private String topicName;
     private String subscriptionName;
+    private DialogPane dialogPane;
     
     // FXML Components - Header
     @FXML private Label subscriptionNameLabel;
@@ -125,6 +126,13 @@ public class SubscriptionDetailsDialogController {
         
         // Carregar rules
         loadRules();
+    }
+    
+    /**
+     * Define o DialogPane para garantir que alerts abram no mesmo monitor
+     */
+    public void setDialogPane(DialogPane dialogPane) {
+        this.dialogPane = dialogPane;
     }
     
     /**
@@ -321,6 +329,10 @@ public class SubscriptionDetailsDialogController {
      */
     private void showError(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
+        // Garantir que alert abra no mesmo monitor do dialog pai
+        if (dialogPane != null && dialogPane.getScene() != null && dialogPane.getScene().getWindow() != null) {
+            alert.initOwner(dialogPane.getScene().getWindow());
+        }
         alert.setTitle("Erro");
         alert.setHeaderText("Erro ao carregar detalhes");
         alert.setContentText(message);
