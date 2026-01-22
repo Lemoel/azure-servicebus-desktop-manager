@@ -63,6 +63,30 @@
                 </HBox>
             </VBox>
             
+            <VBox spacing="10.0">
+                <Label text="Cor do Perfil:" styleClass="field-label">
+                    <font>
+                        <Font name="System Bold" size="12.0" />
+                    </font>
+                </Label>
+                <HBox spacing="15.0" alignment="CENTER_LEFT">
+                    <ToggleButton fx:id="greenColorButton" text="🟢 Verde" prefWidth="120.0" prefHeight="40.0" 
+                                  style="-fx-background-color: #28a745; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5;" 
+                                  onAction="#handleColorSelection" userData="#28a745" />
+                    <ToggleButton fx:id="orangeColorButton" text="🟡 Laranja" prefWidth="120.0" prefHeight="40.0" 
+                                  style="-fx-background-color: #fd7e14; -fx-text-fill: black; -fx-font-weight: bold; -fx-background-radius: 5;" 
+                                  onAction="#handleColorSelection" userData="#fd7e14" />
+                    <ToggleButton fx:id="redColorButton" text="🔴 Vermelho" prefWidth="120.0" prefHeight="40.0" 
+                                  style="-fx-background-color: #dc3545; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5;" 
+                                  onAction="#handleColorSelection" userData="#dc3545" />
+                </HBox>
+                <Label text="💡 A cor escolhida aparecerá no header da aplicação para identificar o ambiente" styleClass="help-text" wrapText="true">
+                    <font>
+                        <Font size="11.0" />
+                    </font>
+                </Label>
+            </VBox>
+            
             <Separator />
             
             <!-- Informação de Segurança -->

@@ -46,6 +46,7 @@ public class MainController implements Initializable {
     @FXML private Button disconnectButton;
     @FXML private Label connectionStatusLabel;
     @FXML private Label namespaceLabel;
+    @FXML private HBox headerBox; // Container do header
     
     // Componentes da interface - Perfis
     @FXML private ComboBox<String> profileComboBox;
@@ -885,6 +886,9 @@ public class MainController implements Initializable {
             Optional<com.azureservicebus.manager.model.ConnectionProfile> profileOpt = profileService.getProfile(profileName);
             if (profileOpt.isPresent()) {
                 com.azureservicebus.manager.model.ConnectionProfile profile = profileOpt.get();
+                
+                // Aplicar cor do perfil no header
+                applyProfileColor(profile.getColor());
                 
                 // Desconectar da conexão anterior se estiver conectado
                 if (serviceBusService.isConnected()) {
@@ -2461,6 +2465,32 @@ public class MainController implements Initializable {
     
     public void setPrimaryStage(Stage primaryStage) {
         this.primaryStage = primaryStage;
+    }
+    
+    /**
+     * Aplica a cor do perfil no header da aplicação
+     */
+    private void applyProfileColor(String color) {
+        if (headerBox == null || color == null) {
+            return;
+        }
+        
+        // Aplicar cor de fundo
+        headerBox.setStyle("-fx-background-color: " + color + ";");
+        
+        // Calcular cor de texto contrastante
+        String textColor = com.azureservicebus.manager.util.ColorUtil.getContrastColor(color);
+        
+        // Aplicar cor de texto nos elementos do header
+        if (connectionStatusLabel != null) {
+            connectionStatusLabel.setStyle("-fx-text-fill: " + textColor + "; -fx-font-weight: bold;");
+        }
+        
+        if (namespaceLabel != null) {
+            namespaceLabel.setStyle("-fx-text-fill: " + textColor + ";");
+        }
+        
+        logger.info("Cor do perfil aplicada no header: {} com texto {}", color, textColor);
     }
     
     public void shutdown() {

@@ -43,11 +43,16 @@ public class ProfileManagerDialogController implements Initializable {
     @FXML private Button newProfileButton;
     @FXML private Button cancelEditButton;
     @FXML private Label formStatusLabel;
+    @FXML private ToggleButton greenColorButton;
+    @FXML private ToggleButton orangeColorButton;
+    @FXML private ToggleButton redColorButton;
     
     private ProfileService profileService;
     private ObservableList<ConnectionProfile> profiles;
     private boolean isEditMode = false;
     private String editingProfileName = null;
+    private ToggleGroup colorToggleGroup;
+    private String selectedColor = "#28a745"; // Verde como padrão
     
     private Runnable onProfileChangedCallback;
     
@@ -58,11 +63,33 @@ public class ProfileManagerDialogController implements Initializable {
         profileService = ProfileService.getInstance();
         profiles = FXCollections.observableArrayList();
         
+        // Configurar ToggleGroup para os botões de cor
+        colorToggleGroup = new ToggleGroup();
+        greenColorButton.setToggleGroup(colorToggleGroup);
+        orangeColorButton.setToggleGroup(colorToggleGroup);
+        redColorButton.setToggleGroup(colorToggleGroup);
+        
+        // Selecionar verde como padrão
+        greenColorButton.setSelected(true);
+        
         setupTableColumns();
         setupEventHandlers();
         loadProfiles();
         
         logger.info("ProfileManagerDialogController inicializado com sucesso");
+    }
+    
+    /**
+     * Handler para seleção de cor
+     */
+    @FXML
+    private void handleColorSelection() {
+        Toggle selectedToggle = colorToggleGroup.getSelectedToggle();
+        if (selectedToggle != null) {
+            ToggleButton selectedButton = (ToggleButton) selectedToggle;
+            selectedColor = (String) selectedButton.getUserData();
+            logger.debug("Cor selecionada: {}", selectedColor);
+        }
     }
     
     /**
@@ -203,6 +230,28 @@ public class ProfileManagerDialogController implements Initializable {
         profileNameField.setText(profile.getName());
         connectionStringTextArea.setText(profile.getConnectionString());
         
+        // Selecionar a cor do perfil
+        String profileColor = profile.getColor();
+        if (profileColor != null) {
+            selectedColor = profileColor;
+            switch (profileColor) {
+                case "#28a745":
+                    greenColorButton.setSelected(true);
+                    break;
+                case "#fd7e14":
+                    orangeColorButton.setSelected(true);
+                    break;
+                case "#dc3545":
+                    redColorButton.setSelected(true);
+                    break;
+                default:
+                    greenColorButton.setSelected(true);
+            }
+        } else {
+            greenColorButton.setSelected(true);
+            selectedColor = "#28a745";
+        }
+        
         hideFormStatus();
     }
     
@@ -237,15 +286,17 @@ public class ProfileManagerDialogController implements Initializable {
             if (isEditMode) {
                 // Atualizar perfil existente
                 ConnectionProfile profile = new ConnectionProfile(editingProfileName, connectionString);
+                profile.setColor(selectedColor);
                 profileService.updateProfile(profile);
                 showFormSuccess("Perfil atualizado com sucesso!");
-                logger.info("Perfil '{}' atualizado", editingProfileName);
+                logger.info("Perfil '{}' atualizado com cor {}", editingProfileName, selectedColor);
             } else {
                 // Criar novo perfil
                 ConnectionProfile profile = new ConnectionProfile(profileName, connectionString);
+                profile.setColor(selectedColor);
                 profileService.addProfile(profile);
                 showFormSuccess("Perfil criado com sucesso!");
-                logger.info("Perfil '{}' criado", profileName);
+                logger.info("Perfil '{}' criado com cor {}", profileName, selectedColor);
             }
             
             // Recarregar lista

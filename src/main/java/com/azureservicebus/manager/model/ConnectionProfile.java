@@ -22,6 +22,9 @@ public class ConnectionProfile {
     @SerializedName("lastUsedAt")
     private String lastUsedAt;
     
+    @SerializedName("color")
+    private String color; // Cor hexadecimal (ex: #28a745)
+    
     public ConnectionProfile() {
         this.createdAt = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         this.lastUsedAt = this.createdAt;
@@ -63,6 +66,42 @@ public class ConnectionProfile {
     
     public void setLastUsedAt(String lastUsedAt) {
         this.lastUsedAt = lastUsedAt;
+    }
+    
+    public String getColor() {
+        return color;
+    }
+    
+    public void setColor(String color) {
+        this.color = color;
+    }
+    
+    /**
+     * Calcula a cor de texto (branco ou preto) que contrasta melhor com a cor de fundo
+     * @return "#FFFFFF" para texto branco ou "#000000" para texto preto
+     */
+    public String getContrastTextColor() {
+        if (color == null || color.isEmpty()) {
+            return "#000000"; // Padrão: texto preto
+        }
+        
+        try {
+            // Remove o # se presente
+            String hex = color.startsWith("#") ? color.substring(1) : color;
+            
+            // Converte hex para RGB
+            int r = Integer.parseInt(hex.substring(0, 2), 16);
+            int g = Integer.parseInt(hex.substring(2, 4), 16);
+            int b = Integer.parseInt(hex.substring(4, 6), 16);
+            
+            // Calcula a luminância usando a fórmula WCAG
+            double luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+            
+            // Se a luminância for maior que 186, usar texto preto; caso contrário, branco
+            return luminance > 186 ? "#000000" : "#FFFFFF";
+        } catch (Exception e) {
+            return "#000000"; // Em caso de erro, retorna texto preto
+        }
     }
     
     /**

@@ -94,6 +94,24 @@
                     <TextArea fx:id="connectionStringTextArea" prefRowCount="3" wrapText="true"
                               promptText="Endpoint=sb://[namespace].servicebus.windows.net/;SharedAccessKeyName=...;SharedAccessKey=..."
                               GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                    
+                    <!-- Cor do Perfil -->
+                    <Label text="Cor do Perfil:" GridPane.columnIndex="0" GridPane.rowIndex="2">
+                        <font>
+                            <Font name="System Bold" size="11.0" />
+                        </font>
+                    </Label>
+                    <HBox spacing="15.0" alignment="CENTER_LEFT" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                        <ToggleButton fx:id="greenColorButton" text="🟢 Verde" prefWidth="100.0" prefHeight="35.0" 
+                                      style="-fx-background-color: #28a745; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5;" 
+                                      onAction="#handleColorSelection" userData="#28a745" />
+                        <ToggleButton fx:id="orangeColorButton" text="🟡 Laranja" prefWidth="100.0" prefHeight="35.0" 
+                                      style="-fx-background-color: #fd7e14; -fx-text-fill: black; -fx-font-weight: bold; -fx-background-radius: 5;" 
+                                      onAction="#handleColorSelection" userData="#fd7e14" />
+                        <ToggleButton fx:id="redColorButton" text="🔴 Vermelho" prefWidth="100.0" prefHeight="35.0" 
+                                      style="-fx-background-color: #dc3545; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5;" 
+                                      onAction="#handleColorSelection" userData="#dc3545" />
+                    </HBox>
                 </GridPane>
                 
                 <HBox spacing="10.0" alignment="CENTER_LEFT">

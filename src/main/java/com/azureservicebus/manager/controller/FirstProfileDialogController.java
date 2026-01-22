@@ -21,9 +21,14 @@ public class FirstProfileDialogController implements Initializable {
     @FXML private TextField profileNameField;
     @FXML private TextArea connectionStringTextArea;
     @FXML private Label statusLabel;
+    @FXML private ToggleButton greenColorButton;
+    @FXML private ToggleButton orangeColorButton;
+    @FXML private ToggleButton redColorButton;
     
     private DialogPane dialogPane;
     private ProfileService profileService;
+    private ToggleGroup colorToggleGroup;
+    private String selectedColor = "#28a745"; // Verde como padrão
     
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -31,10 +36,32 @@ public class FirstProfileDialogController implements Initializable {
         
         profileService = ProfileService.getInstance();
         
+        // Configurar ToggleGroup para os botões de cor
+        colorToggleGroup = new ToggleGroup();
+        greenColorButton.setToggleGroup(colorToggleGroup);
+        orangeColorButton.setToggleGroup(colorToggleGroup);
+        redColorButton.setToggleGroup(colorToggleGroup);
+        
+        // Selecionar verde como padrão
+        greenColorButton.setSelected(true);
+        
         // Focar no campo de nome ao abrir
         profileNameField.requestFocus();
         
         logger.info("FirstProfileDialogController inicializado com sucesso");
+    }
+    
+    /**
+     * Handler para seleção de cor
+     */
+    @FXML
+    private void handleColorSelection() {
+        Toggle selectedToggle = colorToggleGroup.getSelectedToggle();
+        if (selectedToggle != null) {
+            ToggleButton selectedButton = (ToggleButton) selectedToggle;
+            selectedColor = (String) selectedButton.getUserData();
+            logger.debug("Cor selecionada: {}", selectedColor);
+        }
     }
     
     /**
@@ -90,9 +117,10 @@ public class FirstProfileDialogController implements Initializable {
         // Criar e salvar o perfil
         try {
             ConnectionProfile profile = new ConnectionProfile(profileName, connectionString);
+            profile.setColor(selectedColor);
             profileService.addProfile(profile);
             
-            logger.info("Primeiro perfil '{}' criado com sucesso", profileName);
+            logger.info("Primeiro perfil '{}' criado com sucesso com cor {}", profileName, selectedColor);
             return true;
             
         } catch (Exception e) {
