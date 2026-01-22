@@ -20,13 +20,17 @@
             </Label>
             <Region HBox.hgrow="ALWAYS" />
             <HBox spacing="10.0" alignment="CENTER_LEFT">
-               <Label text="⚙️ Perfil:" styleClass="profile-label">
+               <Label text="Perfil:" styleClass="profile-label">
                   <font>
                      <Font name="System Bold" size="12.0" />
                   </font>
                </Label>
                <ComboBox fx:id="profileComboBox" prefWidth="150.0" promptText="Selecione..." />
-               <Button fx:id="manageProfilesButton" styleClass="secondary-button" text="⚙️" />
+               <Button fx:id="manageProfilesButton" styleClass="profile-manage-button" text="⚙️">
+                  <font>
+                     <Font size="20.0" />
+                  </font>
+               </Button>
             </HBox>
             <Label fx:id="connectionStatusLabel" styleClass="connection-status" text="❌ Desconectado" />
             <Label fx:id="namespaceLabel" styleClass="namespace-label" text="Namespace: N/A" />
