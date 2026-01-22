@@ -134,6 +134,11 @@ public class ProfileService {
                         profile.setLastUsedAt(profileJson.get("lastUsedAt").getAsString());
                     }
                     
+                    // Carregar cor do perfil
+                    if (profileJson.has("color")) {
+                        profile.setColor(profileJson.get("color").getAsString());
+                    }
+                    
                     profiles.add(profile);
                 }
                 
@@ -168,6 +173,11 @@ public class ProfileService {
                 
                 profileJson.addProperty("createdAt", profile.getCreatedAt());
                 profileJson.addProperty("lastUsedAt", profile.getLastUsedAt());
+                
+                // Salvar cor do perfil
+                if (profile.getColor() != null) {
+                    profileJson.addProperty("color", profile.getColor());
+                }
                 
                 profilesArray.add(profileJson);
             }

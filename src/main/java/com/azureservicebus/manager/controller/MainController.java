@@ -47,6 +47,7 @@ public class MainController implements Initializable {
     @FXML private Label connectionStatusLabel;
     @FXML private Label namespaceLabel;
     @FXML private HBox headerBox; // Container do header
+    @FXML private HBox namespaceBox; // Container da área do namespace
     
     // Componentes da interface - Perfis
     @FXML private ComboBox<String> profileComboBox;
@@ -2468,29 +2469,22 @@ public class MainController implements Initializable {
     }
     
     /**
-     * Aplica a cor do perfil no header da aplicação
+     * Aplica a cor do perfil como borda na área do namespace
      */
     private void applyProfileColor(String color) {
-        if (headerBox == null || color == null) {
+        if (namespaceBox == null || color == null) {
             return;
         }
         
-        // Aplicar cor de fundo
-        headerBox.setStyle("-fx-background-color: " + color + ";");
+        // Aplicar apenas borda com a cor do perfil na área do namespace
+        namespaceBox.setStyle(
+            "-fx-border-color: " + color + "; " +
+            "-fx-border-width: 2px; " +
+            "-fx-border-radius: 5px; " +
+            "-fx-background-radius: 5px;"
+        );
         
-        // Calcular cor de texto contrastante
-        String textColor = com.azureservicebus.manager.util.ColorUtil.getContrastColor(color);
-        
-        // Aplicar cor de texto nos elementos do header
-        if (connectionStatusLabel != null) {
-            connectionStatusLabel.setStyle("-fx-text-fill: " + textColor + "; -fx-font-weight: bold;");
-        }
-        
-        if (namespaceLabel != null) {
-            namespaceLabel.setStyle("-fx-text-fill: " + textColor + ";");
-        }
-        
-        logger.info("Cor do perfil aplicada no header: {} com texto {}", color, textColor);
+        logger.info("Borda com cor do perfil aplicada na área do namespace: {}", color);
     }
     
     public void shutdown() {

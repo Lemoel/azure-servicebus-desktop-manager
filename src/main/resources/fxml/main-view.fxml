@@ -32,9 +32,14 @@
                   </font>
                </Button>
             </HBox>
-            <Label fx:id="connectionStatusLabel" styleClass="connection-status" text="❌ Desconectado" />
-            <Label fx:id="namespaceLabel" styleClass="namespace-label" text="Namespace: N/A" />
-            <Button fx:id="disconnectButton" styleClass="disconnect-button" text="Desconectar" />
+            <HBox fx:id="namespaceBox" spacing="10.0" alignment="CENTER_LEFT" styleClass="namespace-box">
+               <padding>
+                  <Insets bottom="5.0" left="10.0" right="10.0" top="5.0" />
+               </padding>
+               <Label fx:id="connectionStatusLabel" styleClass="connection-status" text="❌ Desconectado" />
+               <Label fx:id="namespaceLabel" styleClass="namespace-label" text="Namespace: N/A" />
+               <Button fx:id="disconnectButton" styleClass="disconnect-button" text="Desconectar" />
+            </HBox>
          </HBox>
       </VBox>
    </top>
